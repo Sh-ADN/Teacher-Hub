@@ -14,14 +14,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.example.data.StudentEntity
 import com.example.domain.TeacherViewModel
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,8 +34,22 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
     val searchQuery by viewModel.studentSearchQuery.collectAsStateWithLifecycle()
     val students by viewModel.filteredStudents.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
     var showAddDialog by remember { mutableStateOf(false) }
     var editingStudent by remember { mutableStateOf<StudentEntity?>(null) }
+    
+    val csvFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.openInputStream(it)?.use { inputStream ->
+                    val csvData = BufferedReader(InputStreamReader(inputStream)).readText()
+                    viewModel.importStudentsFromCsv(csvData)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Students Directory") }) },
@@ -57,6 +76,17 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 singleLine = true
             )
+            
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                OutlinedButton(onClick = { csvFileLauncher.launch("*/*") }) {
+                    Text("Import CSV")
+                }
+            }
 
             if (students.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

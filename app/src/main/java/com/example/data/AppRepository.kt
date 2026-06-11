@@ -48,6 +48,10 @@ class AppRepository(private val dao: AppDao) {
         dao.insertStudent(student)
     }
 
+    suspend fun insertStudents(students: List<StudentEntity>) {
+        dao.insertStudents(students)
+    }
+
     suspend fun updateStudent(student: StudentEntity) {
         dao.updateStudent(student)
     }

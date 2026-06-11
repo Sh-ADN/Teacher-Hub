@@ -26,6 +26,7 @@ data class TabulationRow(
     val totalMarks: Int,
     val finalGpa: Double,
     val finalGrade: String,
+    val failedSubjectCount: Int = 0,
     val meritPosition: Int = 0 // Computed later
 )
 
@@ -70,6 +71,27 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
         viewModelScope.launch {
             val student = StudentEntity(rollNumber, name)
             repository.insertStudent(student)
+        }
+    }
+
+    fun importStudentsFromCsv(csvData: String) {
+        viewModelScope.launch {
+            val lines = csvData.lines()
+            val studentsToImport = mutableListOf<StudentEntity>()
+            for (line in lines) {
+                if (line.isBlank()) continue
+                val parts = line.split(",")
+                if (parts.size >= 2) {
+                    val roll = parts[0].trim().toIntOrNull()
+                    val name = parts[1].trim()
+                    if (roll != null && name.isNotBlank()) {
+                        studentsToImport.add(StudentEntity(roll, name))
+                    }
+                }
+            }
+            if (studentsToImport.isNotEmpty()) {
+                repository.insertStudents(studentsToImport)
+            }
         }
     }
 
@@ -148,6 +170,7 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
             var totalMarks = 0
             var totalPoints = 0.0
             var hasFail = false
+            var failedSubjectCount = 0
             var normalSubjectCount = 0
             
             val results = subjects.associate { subj ->
@@ -159,6 +182,7 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
                 val grade = result.grade
                 if (grade.point == 0.0) {
                     hasFail = true
+                    failedSubjectCount++
                 }
 
                 totalPoints += grade.point
@@ -193,13 +217,15 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
                 results = results,
                 totalMarks = totalMarks,
                 finalGpa = round(finalGpa * 100) / 100.0,
-                finalGrade = finalGrade
+                finalGrade = finalGrade,
+                failedSubjectCount = failedSubjectCount
             )
         }
         
         // Calculate merit position
         val sortedTabulation = tabulationRows.sortedWith(
-            compareByDescending<TabulationRow> { it.finalGpa }
+            compareBy<TabulationRow> { it.failedSubjectCount }
+                .thenByDescending { it.finalGpa }
                 .thenByDescending { it.totalMarks }
         )
         
