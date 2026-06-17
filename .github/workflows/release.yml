@@ -20,19 +20,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle
+      - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
+          gradle-version: '8.9'
           validate-wrappers: false
-
-      - name: Grant Gradle execute permission
-        run: chmod +x gradlew
 
       - name: Create .env file
         run: echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
 
       - name: Build APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
 
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
