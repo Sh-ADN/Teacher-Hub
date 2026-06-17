@@ -23,13 +23,16 @@ jobs:
       - name: Grant Gradle execute permission
         run: chmod +x gradlew
 
-      - name: Decode keystore from repo file
-        run: base64 -d debug.keystore.base64 > debug.keystore
+      - name: Decode debug keystore
+        run: |
+          echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" > debug.keystore.base64
+          base64 -d debug.keystore.base64 > debug.keystore
 
       - name: Create .env file
-        run: echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+        run: |
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
 
-      - name: Build APK
+      - name: Build release APK
         run: ./gradlew assembleDebug
 
       - name: Upload APK as artifact
