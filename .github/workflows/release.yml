@@ -28,6 +28,7 @@ jobs:
         with:
           gradle-version: '9.3.1'
           validate-wrappers: false
+          cache-disabled: true
 
       - name: Compute version
         id: version
@@ -66,7 +67,7 @@ jobs:
           STORE_PASSWORD: android
           KEY_ALIAS: androiddebugkey
           KEY_PASSWORD: android
-        run: gradle assembleRelease
+        run: gradle assembleRelease --rerun-tasks
 
       - name: Find and rename APK
         run: |
