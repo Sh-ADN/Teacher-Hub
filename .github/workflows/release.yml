@@ -44,25 +44,11 @@ jobs:
           echo "name=$NEW_NAME" >> $GITHUB_OUTPUT
           echo "tag=v$NEW_CODE" >> $GITHUB_OUTPUT
 
-      - name: Patch versionCode and versionName
+      - name: Build APK
         env:
           VERSION_CODE: ${{ steps.version.outputs.code }}
           VERSION_NAME: ${{ steps.version.outputs.name }}
-        run: |
-          python3 - <<'EOF'
-          import re, os
-          code = os.environ['VERSION_CODE']
-          name = os.environ['VERSION_NAME']
-          with open('app/build.gradle.kts', 'r') as f:
-              content = f.read()
-          content = re.sub(r'versionCode\s*=\s*\d+', f'versionCode = {code}', content)
-          content = re.sub(r'versionName\s*=\s*"[^"]*"', f'versionName = "{name}"', content)
-          with open('app/build.gradle.kts', 'w') as f:
-              f.write(content)
-          for line in content.splitlines():
-              if 'versionCode' in line or 'versionName' in line:
-                  print(line)
-          EOF
+        run: gradle assembleDebug
 
       - name: Create .env file
         run: echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
@@ -78,9 +64,6 @@ jobs:
             -storepass android \
             -keypass android \
             -dname "CN=Android Debug,O=Android,C=US"
-
-      - name: Build APK
-        run: gradle assembleDebug
 
       - name: Rename APK
         run: |
