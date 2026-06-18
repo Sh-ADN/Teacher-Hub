@@ -68,17 +68,21 @@ jobs:
           KEY_PASSWORD: android
         run: gradle assembleRelease
 
+      - name: Find and rename APK
+        run: |
+          APK=$(find app/build/outputs/apk/release/ -name "*universal*.apk" -o -name "app-release.apk" | head -n1)
+          if [ -z "$APK" ]; then
+            APK=$(find app/build/outputs/apk/release/ -name "*.apk" | head -n1)
+          fi
+          echo "Found APK: $APK"
+          mv "$APK" app/build/outputs/apk/release/TeacherHub-${{ steps.version.outputs.tag }}.apk
+
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
           name: TeacherHub-APK
-          path: app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/release/TeacherHub-${{ steps.version.outputs.tag }}.apk
           retention-days: 30
-
-      - name: Rename APK
-        run: |
-          mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/TeacherHub-${{ steps.version.outputs.tag }}.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
