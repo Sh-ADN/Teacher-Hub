@@ -47,33 +47,43 @@ jobs:
       - name: Create .env file
         run: echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
 
-      - name: Generate debug keystore
+      - name: Generate keystore
         run: |
           keytool -genkeypair \
-            -keystore debug.keystore \
+            -keystore release.keystore \
             -alias androiddebugkey \
             -keyalg RSA \
             -keysize 2048 \
             -validity 10000 \
             -storepass android \
             -keypass android \
-            -dname "CN=Android Debug,O=Android,C=US"
+            -dname "CN=Android,O=Android,C=US"
 
-      - name: Build APK
+      - name: Build release APK
         env:
           VERSION_CODE: ${{ steps.version.outputs.code }}
           VERSION_NAME: ${{ steps.version.outputs.name }}
-        run: gradle assembleDebug
+          STORE_PASSWORD: android
+          KEY_ALIAS: androiddebugkey
+          KEY_PASSWORD: android
+        run: gradle assembleRelease
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TeacherHub-APK
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 30
 
       - name: Rename APK
         run: |
-          mv app/build/outputs/apk/debug/app-debug.apk \
-             app/build/outputs/apk/debug/TeacherHub-${{ steps.version.outputs.tag }}.apk
+          mv app/build/outputs/apk/release/app-release.apk \
+             app/build/outputs/apk/release/TeacherHub-${{ steps.version.outputs.tag }}.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Teacher Hub ${{ steps.version.outputs.tag }}
-          files: app/build/outputs/apk/debug/TeacherHub-${{ steps.version.outputs.tag }}.apk
+          files: app/build/outputs/apk/release/TeacherHub-${{ steps.version.outputs.tag }}.apk
           generate_release_notes: true
