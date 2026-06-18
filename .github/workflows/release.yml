@@ -44,12 +44,6 @@ jobs:
           echo "name=$NEW_NAME" >> $GITHUB_OUTPUT
           echo "tag=v$NEW_CODE" >> $GITHUB_OUTPUT
 
-      - name: Build APK
-        env:
-          VERSION_CODE: ${{ steps.version.outputs.code }}
-          VERSION_NAME: ${{ steps.version.outputs.name }}
-        run: gradle assembleDebug
-
       - name: Create .env file
         run: echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
 
@@ -64,6 +58,12 @@ jobs:
             -storepass android \
             -keypass android \
             -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Build APK
+        env:
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+        run: gradle assembleDebug
 
       - name: Rename APK
         run: |
