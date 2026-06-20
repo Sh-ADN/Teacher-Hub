@@ -35,17 +35,27 @@ jobs:
       - name: Compute version
         id: version
         run: |
-          LATEST=$(git tag --list 'v*' --sort=-version:refname | head -n1)
+          LATEST=$(git tag --list 'v*.*' --sort=-v:refname | head -n1)
           if [ -z "$LATEST" ]; then
-            NEW_CODE=1
+            MAJOR=1
+            MINOR=0
           else
-            CODE=${LATEST#v}
-            NEW_CODE=$((CODE + 1))
+            VER=${LATEST#v}
+            MAJOR=$(echo "$VER" | cut -d. -f1)
+            MINOR=$(echo "$VER" | cut -d. -f2)
+            MINOR=$((MINOR + 1))
+            if [ "$MINOR" -gt 9 ]; then
+              MINOR=0
+              MAJOR=$((MAJOR + 1))
+            fi
           fi
-          NEW_NAME="${NEW_CODE}.0"
+          NEW_NAME="${MAJOR}.${MINOR}"
+          CODE_COUNT=$(git tag --list 'v*.*' | wc -l)
+          NEW_CODE=$((CODE_COUNT + 1))
           echo "code=$NEW_CODE" >> $GITHUB_OUTPUT
           echo "name=$NEW_NAME" >> $GITHUB_OUTPUT
-          echo "tag=v$NEW_CODE" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_NAME" >> $GITHUB_OUTPUT
+          echo "Computed version: name=$NEW_NAME code=$NEW_CODE tag=v$NEW_NAME"
 
       - name: Create .env file
         run: echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
