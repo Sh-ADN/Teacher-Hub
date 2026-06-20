@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-  namespace = "com.example"
+  namespace = "com.abutorab.teacher.hub"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
