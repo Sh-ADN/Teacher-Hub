@@ -12,7 +12,20 @@
           "package_name": "com.abutorab.teacher.hub"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "853240923990-bv77l9ondgrcoo6tcc260mif4ms30ck6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.abutorab.teacher.hub",
+            "certificate_hash": "8ed8b120b09d54187e4504de440da597950ac161"
+          }
+        },
+        {
+          "client_id": "853240923990-rfa7464ajeert0debbn5j04qv6tmbm52.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDIp7PdWxMPuLEOKESzNDUQ5yvcanqD7FU"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "853240923990-rfa7464ajeert0debbn5j04qv6tmbm52.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
