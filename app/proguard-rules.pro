@@ -1,5 +1,9 @@
 # Keep app's own classes (needed for entry points, Compose previews, etc.)
--keep class com.abutorab.teacher.hub.MainActivity { *; }
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Application
+-keep public class * extends androidx.activity.ComponentActivity
+-keep class com.abutorab.teacher.hub.** { *; }
+-keepclassmembers class com.abutorab.teacher.hub.** { *; }
 
 # Compose - only keep what's needed for runtime reflection, let R8 shrink the rest
 -dontwarn androidx.compose.**
