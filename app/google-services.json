@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "853240923990",
+    "project_id": "teacher-hub-9a5ee",
+    "storage_bucket": "teacher-hub-9a5ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:853240923990:android:62f296bd768092c260f8f7",
+        "android_client_info": {
+          "package_name": "com.abutorab.teacher.hub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIp7PdWxMPuLEOKESzNDUQ5yvcanqD7FU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
