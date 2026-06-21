@@ -66,50 +66,8 @@ fun MainScreen(viewModel: TeacherViewModel) {
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.List, contentDescription = "Tabulation") },
-                    label = { Text("Tabulation") },
-                    selected = currentRoute == "tabulation",
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("tabulation") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.PersonSearch, contentDescription = "Marksheet") },
-                    label = { Text("Marksheet") },
-                    selected = currentRoute == "marksheet",
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("marksheet") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
-                    label = { Text("Quick Edit") },
-                    selected = currentRoute == "quick_edit",
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("quick_edit") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
                 
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
@@ -150,6 +108,48 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         }
                     }
                 )
+            },
+            bottomBar = {
+                if (currentRoute in listOf("quick_edit", "tabulation", "marksheet")) {
+                    NavigationBar {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
+                            label = { Text("Quick Edit") },
+                            selected = currentRoute == "quick_edit",
+                            onClick = {
+                                navController.navigate("quick_edit") {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.List, contentDescription = "Tabulation") },
+                            label = { Text("Tabulation") },
+                            selected = currentRoute == "tabulation",
+                            onClick = {
+                                navController.navigate("tabulation") {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Default.PersonSearch, contentDescription = "Marksheet") },
+                            label = { Text("Marksheet") },
+                            selected = currentRoute == "marksheet",
+                            onClick = {
+                                navController.navigate("marksheet") {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
+                }
             }
         ) { innerPadding ->
             NavHost(
