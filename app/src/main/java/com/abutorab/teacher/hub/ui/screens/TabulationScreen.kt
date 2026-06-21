@@ -32,8 +32,8 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
     val vScroll = rememberScrollState()
     val hScroll = rememberScrollState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(16.dp))
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             "Tabulation Sheet",
             style = MaterialTheme.typography.headlineMedium,
@@ -72,12 +72,12 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                                 translationX = hScroll.value.toFloat()
                             }
                             .zIndex(3f)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .background(MaterialTheme.colorScheme.primary)
                             .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
                             .padding(12.dp),
                         contentAlignment = androidx.compose.ui.Alignment.CenterStart
                     ) {
-                        Text("Roll & Name", fontWeight = FontWeight.Bold)
+                        Text("Roll & Name", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                     }
 
                     // Rest of Header (Top sticky only)
@@ -86,12 +86,12 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                             modifier = Modifier
                                 .width(160.dp)
                                 .fillMaxHeight()
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .background(MaterialTheme.colorScheme.primary)
                                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
                                 .padding(12.dp),
                             contentAlignment = androidx.compose.ui.Alignment.CenterStart
                         ) {
-                            Text(subj.title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(subj.title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                     val totals = listOf("Total Marks", "Final GPA", "Grade", "Merit")
@@ -100,12 +100,12 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                             modifier = Modifier
                                 .width(90.dp)
                                 .fillMaxHeight()
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                                .background(MaterialTheme.colorScheme.primary)
                                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
                                 .padding(12.dp),
                             contentAlignment = androidx.compose.ui.Alignment.CenterStart
                         ) {
-                            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }

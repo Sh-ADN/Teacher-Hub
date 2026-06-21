@@ -27,6 +27,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
     var editingSubject by remember { mutableStateOf<SubjectEntity?>(null) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Subject")
@@ -37,7 +38,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp, bottom = 80.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
@@ -50,8 +51,9 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
             items(allSubjects, key = { it.id }) { subject ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

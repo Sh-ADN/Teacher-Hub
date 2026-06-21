@@ -34,8 +34,8 @@ fun MarksheetScreen(viewModel: TeacherViewModel) {
     val allSubjects by viewModel.allSubjects.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(16.dp))
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             "Search Marksheet",
             style = MaterialTheme.typography.headlineMedium,

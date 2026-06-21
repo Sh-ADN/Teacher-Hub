@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -52,6 +54,7 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Student")
@@ -66,7 +69,7 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
             Text(
                 "Students Directory",
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp)
             )
             OutlinedTextField(
                 value = searchQuery,
@@ -105,8 +108,9 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
                     items(students, key = { it.rollNumber }) { student ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -115,16 +119,31 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Roll: ${student.rollNumber}",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = student.name,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = student.name.take(1).uppercase(),
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = "Roll: ${student.rollNumber}",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = student.name,
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                    }
                                 }
                                 Row {
                                     IconButton(onClick = { editingStudent = student }) {

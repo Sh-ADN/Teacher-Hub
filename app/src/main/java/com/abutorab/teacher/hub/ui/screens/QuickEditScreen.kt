@@ -10,6 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.abutorab.teacher.hub.data.SubjectEntity
 import com.abutorab.teacher.hub.domain.TeacherViewModel
@@ -21,8 +25,8 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
     val allSubjects by viewModel.allSubjects.collectAsStateWithLifecycle()
     val data by viewModel.activeQuickEditData.collectAsStateWithLifecycle()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(16.dp))
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             "Quick Edit Marks",
             style = MaterialTheme.typography.headlineMedium,
@@ -89,14 +93,30 @@ fun StudentMarkRow(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Roll: ${item.student.rollNumber} - ${item.student.name}", 
-                style = MaterialTheme.typography.titleMedium
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = item.student.name.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Roll: ${item.student.rollNumber} - ${item.student.name}", 
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
             
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp), 
