@@ -73,7 +73,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                             }
                             .zIndex(3f)
                             .background(MaterialTheme.colorScheme.primary)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                             .padding(12.dp),
                         contentAlignment = androidx.compose.ui.Alignment.CenterStart
                     ) {
@@ -87,7 +87,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                                 .width(160.dp)
                                 .fillMaxHeight()
                                 .background(MaterialTheme.colorScheme.primary)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                                 .padding(12.dp),
                             contentAlignment = androidx.compose.ui.Alignment.CenterStart
                         ) {
@@ -101,7 +101,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                                 .width(90.dp)
                                 .fillMaxHeight()
                                 .background(MaterialTheme.colorScheme.primary)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                                 .padding(12.dp),
                             contentAlignment = androidx.compose.ui.Alignment.CenterStart
                         ) {
@@ -123,7 +123,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                                 }
                                 .zIndex(1f)
                                 .background(MaterialTheme.colorScheme.surface)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                                 .padding(12.dp)
                         ) {
                             Text("${rowData.student.rollNumber} - ${rowData.student.name}")
@@ -167,7 +167,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                                     .width(160.dp)
                                     .fillMaxHeight()
                                     .background(if (isFail) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surface)
-                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                                     .padding(12.dp),
                                 contentAlignment = androidx.compose.ui.Alignment.CenterStart
                             ) {
@@ -179,17 +179,17 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                         }
                         
                         // Totals Data
-                        Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(1.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
+                        Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(0.5.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
                             Text(rowData.totalMarks.toString(), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         }
                         val gpaColor = if (rowData.finalGpa > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error
-                        Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(1.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
+                        Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(0.5.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
                             Text(rowData.finalGpa.toString(), color = gpaColor, fontWeight = FontWeight.Bold)
                         }
-                        Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(1.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
+                        Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(0.5.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
                             Text(rowData.finalGrade, color = gpaColor, fontWeight = FontWeight.Bold)
                         }
-                        Box(modifier = Modifier.width(90.dp).fillMaxHeight().background(MaterialTheme.colorScheme.tertiaryContainer).border(1.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
+                        Box(modifier = Modifier.width(90.dp).fillMaxHeight().background(MaterialTheme.colorScheme.tertiaryContainer).border(0.5.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
                             Text(rowData.meritPosition.toString(), fontWeight = FontWeight.Bold)
                         }
                     }

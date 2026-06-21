@@ -3,6 +3,8 @@ package com.abutorab.teacher.hub.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -10,9 +12,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,28 +59,46 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(
-                                text = "${subject.title} [ID: ${subject.id}]",
-                                style = MaterialTheme.typography.titleMedium
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.MenuBook,
+                                contentDescription = "Subject",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
-                            Row {
-                                IconButton(onClick = { editingSubject = subject }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                                }
-                                IconButton(onClick = { viewModel.deleteSubject(subject) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(
+                                    text = "${subject.title} [ID: ${subject.id}]",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Row {
+                                    IconButton(onClick = { editingSubject = subject }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                    }
+                                    IconButton(onClick = { viewModel.deleteSubject(subject) }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                    }
                                 }
                             }
+                            Text("Total Max: ${subject.maxMarks} | Pass: ${subject.passMarks}", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "MCQ: ${if (subject.hasMcq) subject.maxMcq else "No"} | " +
+                                       "Written: ${if (subject.hasWritten) subject.maxWritten else "No"} | " +
+                                       "Practical: ${if (subject.hasPractical) subject.maxPractical else "No"}",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                        Text("Total Max: ${subject.maxMarks} | Pass: ${subject.passMarks}", style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            text = "MCQ: ${if (subject.hasMcq) subject.maxMcq else "No"} | " +
-                                   "Written: ${if (subject.hasWritten) subject.maxWritten else "No"} | " +
-                                   "Practical: ${if (subject.hasPractical) subject.maxPractical else "No"}",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
             }

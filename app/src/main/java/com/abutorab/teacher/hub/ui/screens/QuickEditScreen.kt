@@ -1,5 +1,8 @@
 package com.abutorab.teacher.hub.ui.screens
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -91,11 +94,37 @@ fun StudentMarkRow(
     subject: SubjectEntity,
     onMarkChanged: (Int?, Int?, Int?) -> Unit
 ) {
+    var flashTrigger by remember { mutableStateOf(0) }
+    var isInitialLoad by remember { mutableStateOf(true) }
+    
+    LaunchedEffect(item.mark) {
+        if (!isInitialLoad) {
+            flashTrigger++
+        }
+        isInitialLoad = false
+    }
+
+    val defaultColor = MaterialTheme.colorScheme.surface
+    var targetColor by remember { mutableStateOf(defaultColor) }
+
+    LaunchedEffect(flashTrigger) {
+        if (flashTrigger > 0) {
+            targetColor = Color(0xFFC8E6C9)
+            kotlinx.coroutines.delay(100)
+            targetColor = defaultColor
+        }
+    }
+
+    val animatedColor by animateColorAsState(
+        targetValue = targetColor,
+        animationSpec = tween(durationMillis = 600)
+    )
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = animatedColor)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -185,6 +214,7 @@ fun StudentMarkRow(
                     text = "No marks entered",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
