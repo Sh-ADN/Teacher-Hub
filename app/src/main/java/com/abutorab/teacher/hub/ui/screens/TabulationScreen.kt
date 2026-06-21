@@ -142,9 +142,10 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                                     if (parts.size > 1) {
                                         withStyle(SpanStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold)) {
                                             append(parts.joinToString("+"))
+                                            append("=${result.total}")
                                         }
                                         withStyle(SpanStyle(fontSize = 11.sp)) {
-                                            append("=${result.total} | ${result.grade.letter}")
+                                            append(" | ${result.grade.letter}")
                                         }
                                     } else {
                                         withStyle(SpanStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold)) {
@@ -179,7 +180,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                         
                         // Totals Data
                         Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(1.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
-                            Text(rowData.totalMarks.toString())
+                            Text(rowData.totalMarks.toString(), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         }
                         val gpaColor = if (rowData.finalGpa > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error
                         Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(1.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
