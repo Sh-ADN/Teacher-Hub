@@ -24,6 +24,27 @@ interface AppDao {
     @Query("SELECT COUNT(*) FROM subjects")
     suspend fun getSubjectCount(): Int
 
+    @Query("SELECT COUNT(*) FROM students")
+    suspend fun getStudentCount(): Int
+
+    @Query("DELETE FROM subjects")
+    suspend fun deleteAllSubjects()
+
+    @Query("DELETE FROM students")
+    suspend fun deleteAllStudents()
+
+    @Query("DELETE FROM marks")
+    suspend fun deleteAllMarks()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMarks(marks: List<MarkEntity>)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSubjectsReplace(subjects: List<SubjectEntity>)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertStudentsReplace(students: List<StudentEntity>)
+
     // Students
     @Query("SELECT * FROM students ORDER BY rollNumber ASC")
     fun getAllStudents(): Flow<List<StudentEntity>>

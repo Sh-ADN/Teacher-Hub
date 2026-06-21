@@ -37,6 +37,8 @@ data class StudentWithMark(
 
 class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
 
+    val syncManager = com.abutorab.teacher.hub.sync.SyncManager(repository)
+
     // Global
     val allSubjects = repository.allSubjects.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     val allStudents = repository.allStudents.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())

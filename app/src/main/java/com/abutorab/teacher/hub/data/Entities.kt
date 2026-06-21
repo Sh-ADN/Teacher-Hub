@@ -7,22 +7,22 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "subjects")
 data class SubjectEntity(
-    @PrimaryKey val id: String,
-    val title: String,
-    val maxMarks: Int,
-    val passMarks: Int,
-    val hasMcq: Boolean = true,
-    val maxMcq: Int = 100,
-    val hasWritten: Boolean = true,
-    val maxWritten: Int = 100,
-    val hasPractical: Boolean = true,
-    val maxPractical: Int = 0
+    @PrimaryKey var id: String = "",
+    var title: String = "",
+    var maxMarks: Int = 0,
+    var passMarks: Int = 0,
+    var hasMcq: Boolean = true,
+    var maxMcq: Int = 100,
+    var hasWritten: Boolean = true,
+    var maxWritten: Int = 100,
+    var hasPractical: Boolean = true,
+    var maxPractical: Int = 0
 )
 
 @Entity(tableName = "students")
 data class StudentEntity(
-    @PrimaryKey val rollNumber: Int,
-    val name: String
+    @PrimaryKey var rollNumber: Int = 0,
+    var name: String = ""
 )
 
 @Entity(
@@ -38,9 +38,9 @@ data class StudentEntity(
     ]
 )
 data class MarkEntity(
-    val rollNumber: Int,
-    val subjectId: String,
-    val mcq: Int? = null,
-    val written: Int? = null,
-    val practical: Int? = null
+    var rollNumber: Int = 0,
+    var subjectId: String = "",
+    var mcq: Int? = null,
+    var written: Int? = null,
+    var practical: Int? = null
 )

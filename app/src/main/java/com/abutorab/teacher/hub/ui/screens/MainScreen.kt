@@ -162,7 +162,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                 composable("quick_edit") { QuickEditScreen(viewModel) }
                 composable("tabulation") { TabulationScreen(viewModel) }
                 composable("marksheet") { MarksheetScreen(viewModel) }
-                composable("settings") { SettingsScreen() }
+                composable("settings") { SettingsScreen(viewModel) }
             }
         }
     }
