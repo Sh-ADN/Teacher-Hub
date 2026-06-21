@@ -33,11 +33,11 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
     val hScroll = rememberScrollState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text("Tabulation Sheet") },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "Tabulation Sheet",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
         if (tabulationData.isEmpty()) {

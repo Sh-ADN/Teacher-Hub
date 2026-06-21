@@ -35,7 +35,12 @@ fun MarksheetScreen(viewModel: TeacherViewModel) {
     val focusManager = LocalFocusManager.current
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Search Marksheet") })
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "Search Marksheet",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
         
         OutlinedTextField(
             value = searchQuery,
@@ -70,6 +75,7 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {

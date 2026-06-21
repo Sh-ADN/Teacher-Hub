@@ -52,7 +52,6 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Students Directory") }) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Student")
@@ -64,6 +63,11 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            Text(
+                "Students Directory",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+            )
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = viewModel::onStudentSearchChanged,
@@ -99,7 +103,11 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(students, key = { it.rollNumber }) { student ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                        ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

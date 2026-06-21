@@ -22,7 +22,12 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
     val data by viewModel.activeQuickEditData.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Quick Edit Marks") })
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "Quick Edit Marks",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
         
         // Subject Selector
         var expanded by remember { mutableStateOf(false) }
@@ -82,7 +87,11 @@ fun StudentMarkRow(
     subject: SubjectEntity,
     onMarkChanged: (Int?, Int?, Int?) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Roll: ${item.student.rollNumber} - ${item.student.name}", 
