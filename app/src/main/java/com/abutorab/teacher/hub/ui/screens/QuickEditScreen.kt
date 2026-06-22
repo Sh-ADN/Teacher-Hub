@@ -28,7 +28,7 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
     val allSubjects by viewModel.allSubjects.collectAsStateWithLifecycle()
     val data by viewModel.activeQuickEditData.collectAsStateWithLifecycle()
 
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant).imePadding()) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             "Quick Edit Marks",
@@ -70,8 +70,8 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
         // Students List
         if (selectedSubject != null) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().imePadding(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 400.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(data, key = { it.student.rollNumber }) { item ->
@@ -110,14 +110,14 @@ fun StudentMarkRow(
     LaunchedEffect(flashTrigger) {
         if (flashTrigger > 0) {
             targetColor = Color(0xFFC8E6C9)
-            kotlinx.coroutines.delay(100)
+            kotlinx.coroutines.delay(700)
             targetColor = defaultColor
         }
     }
 
     val animatedColor by animateColorAsState(
         targetValue = targetColor,
-        animationSpec = tween(durationMillis = 600)
+        animationSpec = tween(durationMillis = 500)
     )
 
     Card(
