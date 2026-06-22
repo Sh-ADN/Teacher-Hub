@@ -124,8 +124,10 @@ fun StudentMarkRow(
         animationSpec = tween(durationMillis = 500)
     )
 
+    val cardRequester = remember { BringIntoViewRequester() }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().bringIntoViewRequester(cardRequester),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = animatedColor)
@@ -159,22 +161,14 @@ fun StudentMarkRow(
                 var writtenText by remember(item.mark?.written) { mutableStateOf(item.mark?.written?.toString() ?: "") }
                 var practicalText by remember(item.mark?.practical) { mutableStateOf(item.mark?.practical?.toString() ?: "") }
 
-                val mcqRequester = remember { BringIntoViewRequester() }
-                val writtenRequester = remember { BringIntoViewRequester() }
-                val practicalRequester = remember { BringIntoViewRequester() }
-                
                 var mcqFocused by remember { mutableStateOf(false) }
                 var writtenFocused by remember { mutableStateOf(false) }
                 var practicalFocused by remember { mutableStateOf(false) }
 
-                LaunchedEffect(mcqFocused) {
-                    if (mcqFocused) mcqRequester.bringIntoView()
-                }
-                LaunchedEffect(writtenFocused) {
-                    if (writtenFocused) writtenRequester.bringIntoView()
-                }
-                LaunchedEffect(practicalFocused) {
-                    if (practicalFocused) practicalRequester.bringIntoView()
+                LaunchedEffect(mcqFocused, writtenFocused, practicalFocused) {
+                    if (mcqFocused || writtenFocused || practicalFocused) {
+                        cardRequester.bringIntoView()
+                    }
                 }
 
                 if (subject.hasMcq) {
@@ -189,7 +183,7 @@ fun StudentMarkRow(
                         },
                         label = { Text("MCQ (Max ${subject.maxMcq})") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                        modifier = Modifier.weight(1f).bringIntoViewRequester(mcqRequester).onFocusEvent { mcqFocused = it.isFocused },
+                        modifier = Modifier.weight(1f).onFocusEvent { mcqFocused = it.isFocused },
                         singleLine = true,
                         isError = (mcqText.toIntOrNull() ?: 0) > subject.maxMcq
                     )
@@ -207,7 +201,7 @@ fun StudentMarkRow(
                         },
                         label = { Text("Written (Max ${subject.maxWritten})") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                        modifier = Modifier.weight(1f).bringIntoViewRequester(writtenRequester).onFocusEvent { writtenFocused = it.isFocused },
+                        modifier = Modifier.weight(1f).onFocusEvent { writtenFocused = it.isFocused },
                         singleLine = true,
                         isError = (writtenText.toIntOrNull() ?: 0) > subject.maxWritten
                     )
@@ -225,7 +219,7 @@ fun StudentMarkRow(
                         },
                         label = { Text("Practical (Max ${subject.maxPractical})") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                        modifier = Modifier.weight(1f).bringIntoViewRequester(practicalRequester).onFocusEvent { practicalFocused = it.isFocused },
+                        modifier = Modifier.weight(1f).onFocusEvent { practicalFocused = it.isFocused },
                         singleLine = true,
                         isError = (practicalText.toIntOrNull() ?: 0) > subject.maxPractical
                     )
