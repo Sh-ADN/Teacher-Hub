@@ -25,15 +25,6 @@ class AppRepository(private val dao: AppDao) {
             )
             dao.insertSubjects(sampleSubjects)
         }
-
-        val sampleStudents = listOf(
-            StudentEntity(1, "Aarav Roy"),
-            StudentEntity(2, "Sadia Islam"),
-            StudentEntity(3, "Rahim Ahmed"),
-            StudentEntity(4, "Priya Das"),
-            StudentEntity(5, "Nusrat Jahan")
-        )
-        dao.insertStudents(sampleStudents)
     }
 
     suspend fun insertSubject(subject: SubjectEntity) {
