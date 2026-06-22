@@ -72,12 +72,12 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                                 translationX = hScroll.value.toFloat()
                             }
                             .zIndex(3f)
-                            .background(MaterialTheme.colorScheme.primary)
+                            .background(Color(0xFF64B5F6))
                             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                             .padding(12.dp),
                         contentAlignment = androidx.compose.ui.Alignment.CenterStart
                     ) {
-                        Text("Roll & Name", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                        Text("Roll & Name", fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
                     // Rest of Header (Top sticky only)
@@ -86,12 +86,12 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                             modifier = Modifier
                                 .width(160.dp)
                                 .fillMaxHeight()
-                                .background(MaterialTheme.colorScheme.primary)
+                                .background(Color(0xFF64B5F6))
                                 .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                                 .padding(12.dp),
                             contentAlignment = androidx.compose.ui.Alignment.CenterStart
                         ) {
-                            Text(subj.title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onPrimary)
+                            Text(subj.title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White)
                         }
                     }
                     val totals = listOf("Total Marks", "Final GPA", "Grade", "Merit")
@@ -100,12 +100,12 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                             modifier = Modifier
                                 .width(90.dp)
                                 .fillMaxHeight()
-                                .background(MaterialTheme.colorScheme.primary)
+                                .background(Color(0xFF64B5F6))
                                 .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                                 .padding(12.dp),
                             contentAlignment = androidx.compose.ui.Alignment.CenterStart
                         ) {
-                            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimary)
+                            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color.White)
                         }
                     }
                 }

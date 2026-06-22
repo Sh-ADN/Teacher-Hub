@@ -42,13 +42,10 @@ class MainActivity : ComponentActivity() {
       MyApplicationTheme {
         var showSplash by remember { mutableStateOf(true) }
         
-        LaunchedEffect(Unit) {
-          delay(2000L)
-          showSplash = false
-        }
-        
         if (showSplash) {
-          SplashScreen()
+          com.abutorab.teacher.hub.ui.screens.SplashScreen(
+            onFinished = { showSplash = false }
+          )
         } else {
           val viewModel: TeacherViewModel = viewModel(factory = TeacherViewModelFactory(repository))
           MainScreen(viewModel)
@@ -58,18 +55,4 @@ class MainActivity : ComponentActivity() {
   }
 }
 
-@Composable
-fun SplashScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.school_logo_large),
-            contentDescription = "School Logo",
-            modifier = Modifier.size(240.dp)
-        )
-    }
-}
+
