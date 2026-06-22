@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -88,6 +91,7 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun StudentMarkRow(
     item: com.abutorab.teacher.hub.domain.StudentWithMark,
@@ -155,6 +159,24 @@ fun StudentMarkRow(
                 var writtenText by remember(item.mark?.written) { mutableStateOf(item.mark?.written?.toString() ?: "") }
                 var practicalText by remember(item.mark?.practical) { mutableStateOf(item.mark?.practical?.toString() ?: "") }
 
+                val mcqRequester = remember { BringIntoViewRequester() }
+                val writtenRequester = remember { BringIntoViewRequester() }
+                val practicalRequester = remember { BringIntoViewRequester() }
+                
+                var mcqFocused by remember { mutableStateOf(false) }
+                var writtenFocused by remember { mutableStateOf(false) }
+                var practicalFocused by remember { mutableStateOf(false) }
+
+                LaunchedEffect(mcqFocused) {
+                    if (mcqFocused) mcqRequester.bringIntoView()
+                }
+                LaunchedEffect(writtenFocused) {
+                    if (writtenFocused) writtenRequester.bringIntoView()
+                }
+                LaunchedEffect(practicalFocused) {
+                    if (practicalFocused) practicalRequester.bringIntoView()
+                }
+
                 if (subject.hasMcq) {
                     OutlinedTextField(
                         value = mcqText,
@@ -167,7 +189,7 @@ fun StudentMarkRow(
                         },
                         label = { Text("MCQ (Max ${subject.maxMcq})") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).bringIntoViewRequester(mcqRequester).onFocusEvent { mcqFocused = it.isFocused },
                         singleLine = true,
                         isError = (mcqText.toIntOrNull() ?: 0) > subject.maxMcq
                     )
@@ -185,7 +207,7 @@ fun StudentMarkRow(
                         },
                         label = { Text("Written (Max ${subject.maxWritten})") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).bringIntoViewRequester(writtenRequester).onFocusEvent { writtenFocused = it.isFocused },
                         singleLine = true,
                         isError = (writtenText.toIntOrNull() ?: 0) > subject.maxWritten
                     )
@@ -203,7 +225,7 @@ fun StudentMarkRow(
                         },
                         label = { Text("Practical (Max ${subject.maxPractical})") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).bringIntoViewRequester(practicalRequester).onFocusEvent { practicalFocused = it.isFocused },
                         singleLine = true,
                         isError = (practicalText.toIntOrNull() ?: 0) > subject.maxPractical
                     )
