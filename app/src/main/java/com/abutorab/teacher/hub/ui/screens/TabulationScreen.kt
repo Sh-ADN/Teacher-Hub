@@ -182,9 +182,12 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                         Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(0.5.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
                             Text(rowData.totalMarks.toString(), fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         }
-                        val gpaColor = if (rowData.finalGpa > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error
+                        val isNoMarks = rowData.finalGrade == "-"
+                        val gpaColor = if (rowData.finalGpa > 0 || isNoMarks) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error
+                        val gpaText = if (isNoMarks) "-" else rowData.finalGpa.toString()
+                        
                         Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(0.5.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
-                            Text(rowData.finalGpa.toString(), color = gpaColor, fontWeight = FontWeight.Bold)
+                            Text(gpaText, color = gpaColor, fontWeight = FontWeight.Bold)
                         }
                         Box(modifier = Modifier.width(90.dp).fillMaxHeight().border(0.5.dp, MaterialTheme.colorScheme.outlineVariant).padding(12.dp), contentAlignment = androidx.compose.ui.Alignment.CenterStart) {
                             Text(rowData.finalGrade, color = gpaColor, fontWeight = FontWeight.Bold)

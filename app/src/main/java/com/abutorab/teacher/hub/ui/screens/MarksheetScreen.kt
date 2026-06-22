@@ -96,7 +96,9 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("GPA", style = MaterialTheme.typography.labelMedium)
-                    Text(row.finalGpa.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = if (row.finalGpa > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+                    val gpaColor = if (row.finalGpa > 0 || row.finalGrade == "-") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    val gpaText = if (row.finalGrade == "-") "-" else row.finalGpa.toString()
+                    Text(gpaText, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = gpaColor)
                     Text("Merit: ${row.meritPosition}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
             }

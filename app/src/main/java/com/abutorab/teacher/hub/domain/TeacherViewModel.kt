@@ -179,22 +179,26 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
                 val mark = rawResults[subj.id]
                 val result = SubjectResult(subj, mark?.mcq, mark?.written, mark?.practical)
                 
-                totalMarks += result.total
+                val isInputted = mark?.mcq != null || mark?.written != null || mark?.practical != null
                 
-                val grade = result.grade
-                if (grade.point == 0.0) {
-                    hasFail = true
-                    failedSubjectCount++
-                }
+                if (isInputted) {
+                    totalMarks += result.total
+                    
+                    val grade = result.grade
+                    if (grade.point == 0.0) {
+                        hasFail = true
+                        failedSubjectCount++
+                    }
 
-                totalPoints += grade.point
-                normalSubjectCount++
+                    totalPoints += grade.point
+                    normalSubjectCount++
+                }
                 
                 subj.id to result
             }
 
             var finalGpa = 0.0
-            var finalGrade = "F"
+            var finalGrade = if (normalSubjectCount == 0) "-" else "F"
 
             if (!hasFail && normalSubjectCount > 0) {
                 finalGpa = totalPoints / normalSubjectCount
