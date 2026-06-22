@@ -32,6 +32,7 @@ import kotlinx.coroutines.delay
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    android.util.Log.d("TeacherHub", "MainActivity created, version 2.0")
     enableEdgeToEdge()
     
     val db = AppDatabase.getDatabase(applicationContext)

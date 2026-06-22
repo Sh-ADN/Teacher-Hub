@@ -74,7 +74,7 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
         if (selectedSubject != null) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(data, key = { it.student.rollNumber }) { item ->
@@ -85,6 +85,9 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
                             viewModel.saveMark(item.student.rollNumber, mcq, written, pract)
                         }
                     )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
