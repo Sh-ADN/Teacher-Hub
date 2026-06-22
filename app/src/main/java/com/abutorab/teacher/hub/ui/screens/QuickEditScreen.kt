@@ -12,6 +12,8 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
@@ -31,7 +33,7 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
     val allSubjects by viewModel.allSubjects.collectAsStateWithLifecycle()
     val data by viewModel.activeQuickEditData.collectAsStateWithLifecycle()
 
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant).imePadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             "Quick Edit Marks",
@@ -128,9 +130,12 @@ fun StudentMarkRow(
     )
 
     val cardRequester = remember { BringIntoViewRequester() }
+    var cardSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
 
     Card(
-        modifier = Modifier.fillMaxWidth().bringIntoViewRequester(cardRequester),
+        modifier = Modifier.fillMaxWidth()
+            .onGloballyPositioned { coordinates -> cardSize = androidx.compose.ui.geometry.Size(coordinates.size.width.toFloat(), coordinates.size.height.toFloat()) }
+            .bringIntoViewRequester(cardRequester),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = animatedColor)
@@ -170,7 +175,14 @@ fun StudentMarkRow(
 
                 LaunchedEffect(mcqFocused, writtenFocused, practicalFocused) {
                     if (mcqFocused || writtenFocused || practicalFocused) {
-                        cardRequester.bringIntoView()
+                        cardRequester.bringIntoView(
+                            androidx.compose.ui.geometry.Rect(
+                                left = 0f,
+                                top = -2000f,
+                                right = cardSize.width,
+                                bottom = cardSize.height + 24f
+                            )
+                        )
                     }
                 }
 
