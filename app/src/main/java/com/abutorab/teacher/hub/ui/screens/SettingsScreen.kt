@@ -1,6 +1,7 @@
 package com.abutorab.teacher.hub.ui.screens
 
 import android.app.Activity
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +20,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(viewModel: com.abutorab.teacher.hub.domain.TeacherViewModel) {
     val context = LocalContext.current
+    val sharedPrefs = remember { context.getSharedPreferences("app_settings", Context.MODE_PRIVATE) }
+    var ardhoPercent by remember { mutableStateOf(sharedPrefs.getInt("somonnito_ardho_percent", 50)) }
+
     val authManager = remember { AuthManager() }
     var currentUser by remember { mutableStateOf(authManager.getCurrentUser()) }
     var isSigningIn by remember { mutableStateOf(false) }
@@ -213,6 +217,51 @@ fun SettingsScreen(viewModel: com.abutorab.teacher.hub.domain.TeacherViewModel) 
                             }
                         }
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "সমন্বিত নিয়ম (Combination Rule)",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    val barshikPercent = 100 - ardhoPercent
+                    Text(
+                        text = "অর্ধবার্ষিক ${ardhoPercent.toBengaliNumerals()}% + বার্ষিক ${barshikPercent.toBengaliNumerals()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    Text(
+                        text = "অর্ধবার্ষিক এর শতকরা হার নির্ধারণ করুন:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Slider(
+                        value = ardhoPercent.toFloat(),
+                        onValueChange = { newValue ->
+                            ardhoPercent = newValue.toInt()
+                        },
+                        onValueChangeFinished = {
+                            sharedPrefs.edit().putInt("somonnito_ardho_percent", ardhoPercent).apply()
+                            viewModel.notifySettingsChanged() // Notify viewmodel about change
+                        },
+                        valueRange = 0f..100f,
+                        steps = 99
+                    )
                 }
             }
         }

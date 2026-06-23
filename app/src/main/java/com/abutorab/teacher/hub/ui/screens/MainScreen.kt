@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -29,6 +30,9 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    val selectedYear by viewModel.selectedYear.collectAsStateWithLifecycle()
+    val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -100,17 +104,32 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
             topBar = {
                 TopAppBar(
                     title = {
-                        Text(
-                            text = when (currentRoute) {
-                                "students" -> "Students"
-                                "subjects" -> "Subjects"
-                                "tabulation" -> "Tabulation"
-                                "marksheet" -> "Marksheet"
-                                "quick_edit" -> "Quick Edit"
-                                "settings" -> "Settings"
-                                else -> "Teacher Hub"
+                        Column {
+                            Text(
+                                text = when (currentRoute) {
+                                    "students" -> "Students"
+                                    "subjects" -> "Subjects"
+                                    "tabulation" -> "Tabulation"
+                                    "marksheet" -> "Marksheet"
+                                    "quick_edit" -> "Quick Edit"
+                                    "settings" -> "Settings"
+                                    else -> "Teacher Hub"
+                                }
+                            )
+                            val termText = when(selectedTerm) {
+                                "ARDHOBARSHIK" -> "অর্ধবার্ষিক"
+                                "BARSHIK" -> "বার্ষিক"
+                                "SOMONNITO" -> "সমন্বিত"
+                                else -> ""
                             }
-                        )
+                            if (termText.isNotEmpty()) {
+                                Text(
+                                    text = "${selectedYear.toBengaliNumerals()} • $termText",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
@@ -122,18 +141,20 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
             bottomBar = {
                 if (currentRoute in listOf("quick_edit", "tabulation", "marksheet")) {
                     NavigationBar {
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
-                            label = { Text("Quick Edit") },
-                            selected = currentRoute == "quick_edit",
-                            onClick = {
-                                navController.navigate("quick_edit") {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                        if (selectedTerm != "SOMONNITO") {
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
+                                label = { Text("Quick Edit") },
+                                selected = currentRoute == "quick_edit",
+                                onClick = {
+                                    navController.navigate("quick_edit") {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                         NavigationBarItem(
                             icon = { Icon(Icons.Default.List, contentDescription = "Tabulation") },
                             label = { Text("Tabulation") },

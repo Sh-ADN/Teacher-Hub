@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
             onFinished = { showSplash = false }
           )
         } else {
-          val viewModel: TeacherViewModel = viewModel(factory = TeacherViewModelFactory(repository))
+          val viewModel: TeacherViewModel = viewModel(factory = TeacherViewModelFactory(application, repository))
 
           var pickedYear by remember { mutableStateOf<Int?>(null) }
           var pickedTerm by remember { mutableStateOf<String?>(null) }

@@ -1,6 +1,8 @@
 package com.abutorab.teacher.hub.domain
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.abutorab.teacher.hub.data.AppRepository
 import com.abutorab.teacher.hub.data.MarkEntity
@@ -9,6 +11,8 @@ import com.abutorab.teacher.hub.data.SubjectEntity
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlin.math.round
+
+// ... (SubjectResult and other data classes remain) ...
 
 data class SubjectResult(
     val subject: SubjectEntity,
@@ -35,9 +39,21 @@ data class StudentWithMark(
     val mark: MarkEntity?
 )
 
-class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
+class TeacherViewModel(
+    application: Application,
+    private val repository: AppRepository
+) : AndroidViewModel(application) {
+
+    private val sharedPrefs = application.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+    
+    private val _ardhoPercent = MutableStateFlow(sharedPrefs.getInt("somonnito_ardho_percent", 50))
+    
+    fun notifySettingsChanged() {
+        _ardhoPercent.value = sharedPrefs.getInt("somonnito_ardho_percent", 50)
+    }
 
     val syncManager = com.abutorab.teacher.hub.sync.SyncManager(repository)
+
 
     // --- GLOBAL SCOPE STATE ---
     private val _selectedYear = MutableStateFlow(2026)
@@ -60,9 +76,37 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
     }.flatMapLatest { it }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val allMarks = combine(_selectedYear, _selectedTerm) { year, term ->
-        repository.getAllMarks(year, term)
-    }.flatMapLatest { it }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val allMarks = combine(_selectedYear, _selectedTerm, _ardhoPercent, ::Triple)
+        .flatMapLatest { (year, term, ardhoPct) ->
+            if (term == "SOMONNITO") {
+                combine(
+                    repository.getAllMarks(year, "ARDHOBARSHIK"),
+                    repository.getAllMarks(year, "BARSHIK"),
+                    allStudents,
+                    allSubjects
+                ) { ardhoMarks, barshikMarks, students, subjectsList ->
+                    val combinedMarks = mutableListOf<MarkEntity>()
+                    for (student in students) {
+                        for (subj in subjectsList) {
+                            val computed = com.abutorab.teacher.hub.data.CalculationUtils.getSomonnitoMarks(
+                                year = year,
+                                rollNumber = student.rollNumber,
+                                subjectId = subj.id,
+                                ardhoPercent = ardhoPct,
+                                ardhoMarks = ardhoMarks,
+                                barshikMarks = barshikMarks
+                            )
+                            if (computed != null) {
+                                combinedMarks.add(computed)
+                            }
+                        }
+                    }
+                    combinedMarks
+                }
+            } else {
+                repository.getAllMarks(year, term)
+            }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
         viewModelScope.launch {
