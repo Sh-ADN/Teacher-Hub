@@ -71,9 +71,9 @@ class TeacherViewModel(
     val allSubjects = repository.allSubjects.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val allStudents = combine(_selectedYear, _selectedTerm) { year, term ->
-        repository.getStudentsByYearAndTerm(year, term)
-    }.flatMapLatest { it }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val allStudents = _selectedYear.flatMapLatest { year ->
+        repository.getStudentsByYear(year)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val allMarks = combine(_selectedYear, _selectedTerm, _ardhoPercent, ::Triple)
@@ -135,7 +135,7 @@ class TeacherViewModel(
 
     fun addStudent(rollNumber: Int, name: String) {
         viewModelScope.launch {
-            val student = StudentEntity(rollNumber = rollNumber, name = name, year = _selectedYear.value, term = _selectedTerm.value)
+            val student = StudentEntity(rollNumber = rollNumber, name = name, year = _selectedYear.value)
             repository.insertStudent(student)
         }
     }
@@ -145,7 +145,6 @@ class TeacherViewModel(
             val lines = csvData.lines()
             val studentsToImport = mutableListOf<StudentEntity>()
             val currentYear = _selectedYear.value
-            val currentTerm = _selectedTerm.value
             for (line in lines) {
                 if (line.isBlank()) continue
                 val parts = line.split(",")
@@ -153,7 +152,7 @@ class TeacherViewModel(
                     val roll = parts[0].trim().toIntOrNull()
                     val name = parts[1].trim()
                     if (roll != null && name.isNotBlank()) {
-                        studentsToImport.add(StudentEntity(rollNumber = roll, name = name, year = currentYear, term = currentTerm))
+                        studentsToImport.add(StudentEntity(rollNumber = roll, name = name, year = currentYear))
                     }
                 }
             }

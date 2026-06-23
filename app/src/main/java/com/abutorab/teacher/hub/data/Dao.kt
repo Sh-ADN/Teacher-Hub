@@ -24,8 +24,8 @@ interface AppDao {
     @Query("SELECT COUNT(*) FROM subjects")
     suspend fun getSubjectCount(): Int
 
-    @Query("SELECT COUNT(*) FROM students WHERE year = :year AND term = :term")
-    suspend fun getStudentCount(year: Int, term: String): Int
+    @Query("SELECT COUNT(*) FROM students WHERE year = :year")
+    suspend fun getStudentCount(year: Int): Int
 
     @Query("SELECT COUNT(*) FROM students")
     suspend fun getStudentCountGlobal(): Int
@@ -33,8 +33,8 @@ interface AppDao {
     @Query("DELETE FROM subjects")
     suspend fun deleteAllSubjects()
 
-    @Query("DELETE FROM students WHERE year = :year AND term = :term")
-    suspend fun deleteAllStudents(year: Int, term: String)
+    @Query("DELETE FROM students WHERE year = :year")
+    suspend fun deleteAllStudents(year: Int)
 
     @Query("DELETE FROM marks WHERE year = :year AND term = :term")
     suspend fun deleteAllMarks(year: Int, term: String)
@@ -49,8 +49,8 @@ interface AppDao {
     suspend fun insertStudentsReplace(students: List<StudentEntity>)
 
     // Students
-    @Query("SELECT * FROM students WHERE year = :year AND term = :term ORDER BY rollNumber ASC")
-    fun getStudentsByYearAndTerm(year: Int, term: String): Flow<List<StudentEntity>>
+    @Query("SELECT * FROM students WHERE year = :year ORDER BY rollNumber ASC")
+    fun getStudentsByYear(year: Int): Flow<List<StudentEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStudent(student: StudentEntity)
@@ -64,8 +64,8 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertStudents(students: List<StudentEntity>)
 
-    @Query("SELECT * FROM students WHERE rollNumber = :roll AND year = :year AND term = :term")
-    suspend fun getStudentByRoll(roll: Int, year: Int, term: String): StudentEntity?
+    @Query("SELECT * FROM students WHERE rollNumber = :roll AND year = :year")
+    suspend fun getStudentByRoll(roll: Int, year: Int): StudentEntity?
 
     // Marks
     @Query("SELECT * FROM marks WHERE subjectId = :subjectId AND year = :year AND term = :term")

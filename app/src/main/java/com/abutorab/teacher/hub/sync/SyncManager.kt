@@ -34,7 +34,7 @@ class SyncManager(private val repository: AppRepository) {
         val batch = firestore.batch()
 
         students.forEach { student ->
-            val ref = userDocRef.collection("students").document("${student.year}_${student.term}_${student.rollNumber}")
+            val ref = userDocRef.collection("students").document("${student.year}_${student.rollNumber}")
             batch.set(ref, student)
         }
 

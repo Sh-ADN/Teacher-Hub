@@ -15,8 +15,8 @@ class AppRepository(private val dao: AppDao) {
     val allStudentsGlobal: Flow<List<StudentEntity>> = dao.getAllStudentsGlobal()
     val allMarksGlobal: Flow<List<MarkEntity>> = dao.getAllMarksGlobal()
 
-    fun getStudentsByYearAndTerm(year: Int, term: String): Flow<List<StudentEntity>> {
-        return dao.getStudentsByYearAndTerm(year, term)
+    fun getStudentsByYear(year: Int): Flow<List<StudentEntity>> {
+        return dao.getStudentsByYear(year)
     }
 
     fun getAllMarks(year: Int, term: String): Flow<List<MarkEntity>> {
@@ -63,7 +63,7 @@ class AppRepository(private val dao: AppDao) {
     suspend fun insertStudent(student: StudentEntity) {
         dao.insertStudent(student)
         auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "students", "${student.year}_${student.term}_${student.rollNumber}", student) }
+            scope.launch { syncManager.pushSingleChange(uid, "students", "${student.year}_${student.rollNumber}", student) }
         }
     }
 
@@ -72,7 +72,7 @@ class AppRepository(private val dao: AppDao) {
         auth.currentUser?.uid?.let { uid ->
             scope.launch {
                 students.forEach { student ->
-                    syncManager.pushSingleChange(uid, "students", "${student.year}_${student.term}_${student.rollNumber}", student)
+                    syncManager.pushSingleChange(uid, "students", "${student.year}_${student.rollNumber}", student)
                 }
             }
         }
@@ -81,14 +81,14 @@ class AppRepository(private val dao: AppDao) {
     suspend fun updateStudent(student: StudentEntity) {
         dao.updateStudent(student)
         auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "students", "${student.year}_${student.term}_${student.rollNumber}", student) }
+            scope.launch { syncManager.pushSingleChange(uid, "students", "${student.year}_${student.rollNumber}", student) }
         }
     }
 
     suspend fun deleteStudent(student: StudentEntity) {
         dao.deleteStudent(student)
         auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.deleteSingleDocument(uid, "students", "${student.year}_${student.term}_${student.rollNumber}") }
+            scope.launch { syncManager.deleteSingleDocument(uid, "students", "${student.year}_${student.rollNumber}") }
         }
     }
 
