@@ -39,10 +39,30 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
 
     val syncManager = com.abutorab.teacher.hub.sync.SyncManager(repository)
 
+    // --- GLOBAL SCOPE STATE ---
+    private val _selectedYear = MutableStateFlow(2026)
+    val selectedYear = _selectedYear.asStateFlow()
+
+    private val _selectedTerm = MutableStateFlow("ARDHOBARSHIK")
+    val selectedTerm = _selectedTerm.asStateFlow()
+
+    fun setYearAndTerm(year: Int, term: String) {
+        _selectedYear.value = year
+        _selectedTerm.value = term
+    }
+
     // Global
     val allSubjects = repository.allSubjects.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    val allStudents = repository.allStudents.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    val allMarks = repository.allMarks.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val allStudents = combine(_selectedYear, _selectedTerm) { year, term ->
+        repository.getStudentsByYearAndTerm(year, term)
+    }.flatMapLatest { it }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val allMarks = combine(_selectedYear, _selectedTerm) { year, term ->
+        repository.getAllMarks(year, term)
+    }.flatMapLatest { it }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
         viewModelScope.launch {
@@ -71,7 +91,7 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
 
     fun addStudent(rollNumber: Int, name: String) {
         viewModelScope.launch {
-            val student = StudentEntity(rollNumber, name)
+            val student = StudentEntity(rollNumber = rollNumber, name = name, year = _selectedYear.value, term = _selectedTerm.value)
             repository.insertStudent(student)
         }
     }
@@ -80,6 +100,8 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
         viewModelScope.launch {
             val lines = csvData.lines()
             val studentsToImport = mutableListOf<StudentEntity>()
+            val currentYear = _selectedYear.value
+            val currentTerm = _selectedTerm.value
             for (line in lines) {
                 if (line.isBlank()) continue
                 val parts = line.split(",")
@@ -87,7 +109,7 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
                     val roll = parts[0].trim().toIntOrNull()
                     val name = parts[1].trim()
                     if (roll != null && name.isNotBlank()) {
-                        studentsToImport.add(StudentEntity(roll, name))
+                        studentsToImport.add(StudentEntity(rollNumber = roll, name = name, year = currentYear, term = currentTerm))
                     }
                 }
             }
@@ -136,17 +158,18 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val activeQuickEditData = selectedSubject.flatMapLatest { subject ->
-        if (subject == null) {
-            flowOf(emptyList())
-        } else {
-            combine(allStudents, repository.getMarksForSubject(subject.id)) { students, marks ->
-                val markMap = marks.associateBy { it.rollNumber }
-                students.map { student ->
-                    StudentWithMark(student, markMap[student.rollNumber])
+    val activeQuickEditData = combine(selectedSubject, _selectedYear, _selectedTerm, ::Triple)
+        .flatMapLatest { (subject, year, term) ->
+            if (subject == null) {
+                flowOf(emptyList())
+            } else {
+                combine(allStudents, repository.getMarksForSubject(subject.id, year, term)) { students, marks ->
+                    val markMap = marks.associateBy { it.rollNumber }
+                    students.map { student ->
+                        StudentWithMark(student, markMap[student.rollNumber])
+                    }
                 }
             }
-        }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun selectSubject(subjectId: String) {
@@ -156,7 +179,7 @@ class TeacherViewModel(private val repository: AppRepository) : ViewModel() {
     fun saveMark(rollNumber: Int, mcq: Int?, written: Int?, practical: Int?) {
         val subjectId = selectedSubject.value?.id ?: return
         viewModelScope.launch {
-            repository.saveMark(rollNumber, subjectId, mcq, written, practical)
+            repository.saveMark(rollNumber, subjectId, mcq, written, practical, _selectedYear.value, _selectedTerm.value)
         }
     }
 

@@ -24,17 +24,20 @@ interface AppDao {
     @Query("SELECT COUNT(*) FROM subjects")
     suspend fun getSubjectCount(): Int
 
+    @Query("SELECT COUNT(*) FROM students WHERE year = :year AND term = :term")
+    suspend fun getStudentCount(year: Int, term: String): Int
+
     @Query("SELECT COUNT(*) FROM students")
-    suspend fun getStudentCount(): Int
+    suspend fun getStudentCountGlobal(): Int
 
     @Query("DELETE FROM subjects")
     suspend fun deleteAllSubjects()
 
-    @Query("DELETE FROM students")
-    suspend fun deleteAllStudents()
+    @Query("DELETE FROM students WHERE year = :year AND term = :term")
+    suspend fun deleteAllStudents(year: Int, term: String)
 
-    @Query("DELETE FROM marks")
-    suspend fun deleteAllMarks()
+    @Query("DELETE FROM marks WHERE year = :year AND term = :term")
+    suspend fun deleteAllMarks(year: Int, term: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMarks(marks: List<MarkEntity>)
@@ -46,8 +49,8 @@ interface AppDao {
     suspend fun insertStudentsReplace(students: List<StudentEntity>)
 
     // Students
-    @Query("SELECT * FROM students ORDER BY rollNumber ASC")
-    fun getAllStudents(): Flow<List<StudentEntity>>
+    @Query("SELECT * FROM students WHERE year = :year AND term = :term ORDER BY rollNumber ASC")
+    fun getStudentsByYearAndTerm(year: Int, term: String): Flow<List<StudentEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStudent(student: StudentEntity)
@@ -61,18 +64,30 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertStudents(students: List<StudentEntity>)
 
-    @Query("SELECT * FROM students WHERE rollNumber = :roll")
-    suspend fun getStudentByRoll(roll: Int): StudentEntity?
+    @Query("SELECT * FROM students WHERE rollNumber = :roll AND year = :year AND term = :term")
+    suspend fun getStudentByRoll(roll: Int, year: Int, term: String): StudentEntity?
 
     // Marks
-    @Query("SELECT * FROM marks WHERE subjectId = :subjectId")
-    fun getMarksForSubject(subjectId: String): Flow<List<MarkEntity>>
+    @Query("SELECT * FROM marks WHERE subjectId = :subjectId AND year = :year AND term = :term")
+    fun getMarksForSubject(subjectId: String, year: Int, term: String): Flow<List<MarkEntity>>
 
-    @Query("SELECT * FROM marks WHERE rollNumber = :roll")
-    fun getMarksForStudent(roll: Int): Flow<List<MarkEntity>>
+    @Query("SELECT * FROM marks WHERE rollNumber = :roll AND year = :year AND term = :term")
+    fun getMarksForStudent(roll: Int, year: Int, term: String): Flow<List<MarkEntity>>
+
+    @Query("SELECT * FROM marks WHERE year = :year AND term = :term")
+    fun getAllMarks(year: Int, term: String): Flow<List<MarkEntity>>
 
     @Query("SELECT * FROM marks")
-    fun getAllMarks(): Flow<List<MarkEntity>>
+    fun getAllMarksGlobal(): Flow<List<MarkEntity>>
+
+    @Query("SELECT * FROM students")
+    fun getAllStudentsGlobal(): Flow<List<StudentEntity>>
+
+    @Query("DELETE FROM students")
+    suspend fun deleteAllStudentsGlobal()
+
+    @Query("DELETE FROM marks")
+    suspend fun deleteAllMarksGlobal()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMark(mark: MarkEntity)

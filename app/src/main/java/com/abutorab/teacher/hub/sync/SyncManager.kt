@@ -21,20 +21,20 @@ class SyncManager(private val repository: AppRepository) {
     }
 
     suspend fun hasLocalData(): Boolean {
-        return repository.getStudentCount() > 0
+        return repository.getStudentCountGlobal() > 0
     }
 
     suspend fun pushAllToCloud(uid: String) {
         val userDocRef = firestore.collection("users").document(uid)
         
-        val students = repository.allStudents.first()
+        val students = repository.allStudentsGlobal.first()
         val subjects = repository.allSubjects.first()
-        val marks = repository.allMarks.first()
+        val marks = repository.allMarksGlobal.first()
 
         val batch = firestore.batch()
 
         students.forEach { student ->
-            val ref = userDocRef.collection("students").document(student.rollNumber.toString())
+            val ref = userDocRef.collection("students").document("${student.year}_${student.term}_${student.rollNumber}")
             batch.set(ref, student)
         }
 
@@ -44,7 +44,7 @@ class SyncManager(private val repository: AppRepository) {
         }
 
         marks.forEach { mark ->
-            val ref = userDocRef.collection("marks").document("${mark.rollNumber}_${mark.subjectId}")
+            val ref = userDocRef.collection("marks").document("${mark.year}_${mark.term}_${mark.rollNumber}_${mark.subjectId}")
             batch.set(ref, mark)
         }
 
@@ -62,7 +62,7 @@ class SyncManager(private val repository: AppRepository) {
         val subjects = subjectsSnapshot.documents.mapNotNull { it.toObject(SubjectEntity::class.java) }
         val marks = marksSnapshot.documents.mapNotNull { it.toObject(MarkEntity::class.java) }
 
-        repository.clearAllData()
+        repository.clearAllDataGlobal()
         repository.saveAllData(subjects, students, marks)
     }
 

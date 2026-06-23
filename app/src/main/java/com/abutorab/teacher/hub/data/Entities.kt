@@ -19,20 +19,22 @@ data class SubjectEntity(
     var maxPractical: Int = 0
 )
 
-@Entity(tableName = "students")
+@Entity(primaryKeys = ["rollNumber", "year", "term"], tableName = "students")
 data class StudentEntity(
-    @PrimaryKey var rollNumber: Int = 0,
-    var name: String = ""
+    var rollNumber: Int = 0,
+    var name: String = "",
+    var year: Int = 0,
+    var term: String = ""
 )
 
 @Entity(
     tableName = "marks",
-    primaryKeys = ["rollNumber", "subjectId"],
+    primaryKeys = ["rollNumber", "subjectId", "year", "term"],
     foreignKeys = [
         ForeignKey(
             entity = StudentEntity::class,
-            parentColumns = ["rollNumber"],
-            childColumns = ["rollNumber"],
+            parentColumns = ["rollNumber", "year", "term"],
+            childColumns = ["rollNumber", "year", "term"],
             onDelete = ForeignKey.CASCADE
         )
     ]
@@ -42,5 +44,7 @@ data class MarkEntity(
     var subjectId: String = "",
     var mcq: Int? = null,
     var written: Int? = null,
-    var practical: Int? = null
+    var practical: Int? = null,
+    var year: Int = 0,
+    var term: String = ""
 )

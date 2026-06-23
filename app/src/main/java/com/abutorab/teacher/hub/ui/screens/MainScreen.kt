@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: TeacherViewModel) {
+fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -38,6 +38,16 @@ fun MainScreen(viewModel: TeacherViewModel) {
         drawerContent = {
             ModalDrawerSheet {
                 Spacer(modifier = Modifier.height(16.dp))
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Edit, contentDescription = "Change Year/Term") },
+                    label = { Text("বছর/টার্ম পরিবর্তন করুন") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onChangeYearTerm()
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.People, contentDescription = "Students") },
                     label = { Text("Students") },

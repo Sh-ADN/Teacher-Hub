@@ -12,8 +12,16 @@ class AppRepository(private val dao: AppDao) {
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
     val allSubjects: Flow<List<SubjectEntity>> = dao.getAllSubjects()
-    val allStudents: Flow<List<StudentEntity>> = dao.getAllStudents()
-    val allMarks: Flow<List<MarkEntity>> = dao.getAllMarks()
+    val allStudentsGlobal: Flow<List<StudentEntity>> = dao.getAllStudentsGlobal()
+    val allMarksGlobal: Flow<List<MarkEntity>> = dao.getAllMarksGlobal()
+
+    fun getStudentsByYearAndTerm(year: Int, term: String): Flow<List<StudentEntity>> {
+        return dao.getStudentsByYearAndTerm(year, term)
+    }
+
+    fun getAllMarks(year: Int, term: String): Flow<List<MarkEntity>> {
+        return dao.getAllMarks(year, term)
+    }
 
     suspend fun createInitialDataIfEmpty() {
         if (dao.getSubjectCount() == 0) {
@@ -48,14 +56,14 @@ class AppRepository(private val dao: AppDao) {
         }
     }
 
-    fun getMarksForSubject(subjectId: String): Flow<List<MarkEntity>> {
-        return dao.getMarksForSubject(subjectId)
+    fun getMarksForSubject(subjectId: String, year: Int, term: String): Flow<List<MarkEntity>> {
+        return dao.getMarksForSubject(subjectId, year, term)
     }
 
     suspend fun insertStudent(student: StudentEntity) {
         dao.insertStudent(student)
         auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "students", student.rollNumber.toString(), student) }
+            scope.launch { syncManager.pushSingleChange(uid, "students", "${student.year}_${student.term}_${student.rollNumber}", student) }
         }
     }
 
@@ -64,7 +72,7 @@ class AppRepository(private val dao: AppDao) {
         auth.currentUser?.uid?.let { uid ->
             scope.launch {
                 students.forEach { student ->
-                    syncManager.pushSingleChange(uid, "students", student.rollNumber.toString(), student)
+                    syncManager.pushSingleChange(uid, "students", "${student.year}_${student.term}_${student.rollNumber}", student)
                 }
             }
         }
@@ -73,38 +81,40 @@ class AppRepository(private val dao: AppDao) {
     suspend fun updateStudent(student: StudentEntity) {
         dao.updateStudent(student)
         auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "students", student.rollNumber.toString(), student) }
+            scope.launch { syncManager.pushSingleChange(uid, "students", "${student.year}_${student.term}_${student.rollNumber}", student) }
         }
     }
 
     suspend fun deleteStudent(student: StudentEntity) {
         dao.deleteStudent(student)
         auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.deleteSingleDocument(uid, "students", student.rollNumber.toString()) }
+            scope.launch { syncManager.deleteSingleDocument(uid, "students", "${student.year}_${student.term}_${student.rollNumber}") }
         }
     }
 
-    suspend fun saveMark(rollNumber: Int, subjectId: String, mcq: Int?, written: Int?, practical: Int?) {
+    suspend fun saveMark(rollNumber: Int, subjectId: String, mcq: Int?, written: Int?, practical: Int?, year: Int, term: String) {
         val mark = MarkEntity(
             rollNumber = rollNumber,
             subjectId = subjectId,
             mcq = mcq,
             written = written,
-            practical = practical
+            practical = practical,
+            year = year,
+            term = term
         )
         dao.insertMark(mark)
         auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "marks", "${rollNumber}_${subjectId}", mark) }
+            scope.launch { syncManager.pushSingleChange(uid, "marks", "${year}_${term}_${rollNumber}_${subjectId}", mark) }
         }
     }
 
-    suspend fun getStudentCount(): Int {
-        return dao.getStudentCount()
+    suspend fun getStudentCountGlobal(): Int {
+        return dao.getStudentCountGlobal()
     }
 
-    suspend fun clearAllData() {
-        dao.deleteAllMarks()
-        dao.deleteAllStudents()
+    suspend fun clearAllDataGlobal() {
+        dao.deleteAllMarksGlobal()
+        dao.deleteAllStudentsGlobal()
         dao.deleteAllSubjects()
     }
 

@@ -48,7 +48,33 @@ class MainActivity : ComponentActivity() {
           )
         } else {
           val viewModel: TeacherViewModel = viewModel(factory = TeacherViewModelFactory(repository))
-          MainScreen(viewModel)
+
+          var pickedYear by remember { mutableStateOf<Int?>(null) }
+          var pickedTerm by remember { mutableStateOf<String?>(null) }
+
+          when {
+              pickedYear == null -> {
+                  com.abutorab.teacher.hub.ui.screens.YearPickerScreen(onYearSelected = { year ->
+                      pickedYear = year
+                  })
+              }
+              pickedTerm == null -> {
+                  com.abutorab.teacher.hub.ui.screens.TermPickerScreen(
+                      selectedYear = pickedYear!!,
+                      onTermSelected = { term ->
+                          pickedTerm = term
+                          viewModel.setYearAndTerm(pickedYear!!, term)
+                      },
+                      onBack = { pickedYear = null }
+                  )
+              }
+              else -> {
+                  MainScreen(viewModel, onChangeYearTerm = {
+                      pickedYear = null
+                      pickedTerm = null
+                  })
+              }
+          }
         }
       }
     }
