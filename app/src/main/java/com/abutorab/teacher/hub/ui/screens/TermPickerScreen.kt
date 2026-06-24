@@ -24,51 +24,56 @@ fun TermPickerScreen(
     onTermSelected: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "${selectedYear.toBengaliNumerals()} শিক্ষাবর্ষ") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(text = "${selectedYear.toBengaliNumerals()} শিক্ষাবর্ষ") },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
                     }
-                }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            TermBlock(
-                title = "অর্ধবার্ষিক",
-                icon = Icons.Default.CalendarMonth,
-                backgroundColor = Color(0xFFE3F2FD), // Soft blue
-                contentColor = Color(0xFF1565C0),
-                onClick = { onTermSelected("ARDHOBARSHIK") }
-            )
+                TermBlock(
+                    title = "অর্ধবার্ষিক",
+                    icon = Icons.Default.CalendarMonth,
+                    backgroundColor = Color(0xFFE3F2FD), // Soft blue
+                    contentColor = Color(0xFF1565C0),
+                    onClick = { onTermSelected("ARDHOBARSHIK") }
+                )
 
-            TermBlock(
-                title = "বার্ষিক",
-                icon = Icons.Default.EventAvailable,
-                backgroundColor = Color(0xFFE8F5E9), // Soft green
-                contentColor = Color(0xFF2E7D32),
-                onClick = { onTermSelected("BARSHIK") }
-            )
+                TermBlock(
+                    title = "বার্ষিক",
+                    icon = Icons.Default.EventAvailable,
+                    backgroundColor = Color(0xFFE8F5E9), // Soft green
+                    contentColor = Color(0xFF2E7D32),
+                    onClick = { onTermSelected("BARSHIK") }
+                )
 
-            TermBlock(
-                title = "সমন্বিত",
-                icon = Icons.Default.Insights,
-                backgroundColor = Color(0xFFF3E5F5), // Soft purple
-                contentColor = Color(0xFF6A1B9A),
-                onClick = { onTermSelected("SOMONNITO") }
-            )
+                TermBlock(
+                    title = "সমন্বিত",
+                    icon = Icons.Default.Insights,
+                    backgroundColor = Color(0xFFF3E5F5), // Soft purple
+                    contentColor = Color(0xFF6A1B9A),
+                    onClick = { onTermSelected("SOMONNITO") }
+                )
+            }
         }
     }
 }

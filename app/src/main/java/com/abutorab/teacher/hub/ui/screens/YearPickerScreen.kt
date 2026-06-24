@@ -25,12 +25,16 @@ fun Int.toBengaliNumerals(): String {
 fun YearPickerScreen(onYearSelected: (Int) -> Unit) {
     val years = (2020..2035).toList()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         Spacer(modifier = Modifier.height(32.dp))
         
         Text(
@@ -75,5 +79,6 @@ fun YearPickerScreen(onYearSelected: (Int) -> Unit) {
                 }
             }
         }
+    }
     }
 }
