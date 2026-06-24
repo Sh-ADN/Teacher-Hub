@@ -33,12 +33,18 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
     val allSubjects by viewModel.allSubjects.collectAsStateWithLifecycle()
     val data by viewModel.activeQuickEditData.collectAsStateWithLifecycle()
 
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
+    val animatedSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.surfaceVariant, animationSpec = tween(300))
+    val animatedOnSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurfaceVariant, animationSpec = tween(300))
+    val animatedOnSurface by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurface, animationSpec = tween(300))
+    val animatedSurface by animateColorAsState(targetValue = MaterialTheme.colorScheme.surface, animationSpec = tween(300))
+    val animatedPrimary by animateColorAsState(targetValue = MaterialTheme.colorScheme.primary, animationSpec = tween(300))
+
+    Column(modifier = Modifier.fillMaxSize().background(animatedSurfaceVariant)) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             "Quick Edit Marks",
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = animatedOnSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
         
@@ -55,14 +61,14 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
-                label = { Text("Select Subject", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                label = { Text("Select Subject", color = animatedOnSurfaceVariant) },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    focusedTextColor = animatedOnSurface,
+                    unfocusedTextColor = animatedOnSurface,
+                    focusedContainerColor = animatedSurface,
+                    unfocusedContainerColor = animatedSurface,
+                    focusedBorderColor = animatedPrimary,
+                    unfocusedBorderColor = animatedOnSurfaceVariant
                 )
             )
             ExposedDropdownMenu(
@@ -71,7 +77,7 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
             ) {
                 allSubjects.forEach { subj ->
                     DropdownMenuItem(
-                        text = { Text(subj.title, color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text(subj.title, color = animatedOnSurface) },
                         onClick = {
                             viewModel.selectSubject(subj.id)
                             expanded = false
@@ -123,21 +129,28 @@ fun StudentMarkRow(
     }
 
     val defaultColor = MaterialTheme.colorScheme.surface
-    var targetColor by remember { mutableStateOf(defaultColor) }
     val highlightColor = MaterialTheme.colorScheme.primaryContainer
+    var isHighlight by remember { mutableStateOf(false) }
 
     LaunchedEffect(flashTrigger) {
         if (flashTrigger > 0) {
-            targetColor = highlightColor
+            isHighlight = true
             kotlinx.coroutines.delay(700)
-            targetColor = defaultColor
+            isHighlight = false
         }
     }
 
+    val targetColor = if (isHighlight) highlightColor else defaultColor
     val animatedColor by animateColorAsState(
         targetValue = targetColor,
-        animationSpec = tween(durationMillis = 500)
+        animationSpec = tween(durationMillis = 300)
     )
+
+    val animatedPrimaryContainer by animateColorAsState(targetValue = MaterialTheme.colorScheme.primaryContainer, animationSpec = tween(300))
+    val animatedOnPrimaryContainer by animateColorAsState(targetValue = MaterialTheme.colorScheme.onPrimaryContainer, animationSpec = tween(300))
+    val animatedOnSurface by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurface, animationSpec = tween(300))
+    val animatedOnSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurfaceVariant, animationSpec = tween(300))
+    val animatedPrimary by animateColorAsState(targetValue = MaterialTheme.colorScheme.primary, animationSpec = tween(300))
 
     val cardRequester = remember { BringIntoViewRequester() }
     var cardSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
@@ -155,20 +168,20 @@ fun StudentMarkRow(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                        .background(animatedPrimaryContainer, shape = CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = item.student.name.take(1).uppercase(),
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = animatedOnPrimaryContainer
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Roll: ${item.student.rollNumber} - ${item.student.name}", 
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = animatedOnSurface
                 )
             }
             
@@ -207,18 +220,18 @@ fun StudentMarkRow(
                                 onMarkChanged(newVal.toIntOrNull(), item.mark?.written, item.mark?.practical)
                             }
                         },
-                        label = { Text("MCQ (Max ${subject.maxMcq})", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        label = { Text("MCQ (Max ${subject.maxMcq})", color = animatedOnSurfaceVariant) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         modifier = Modifier.weight(1f).onFocusEvent { mcqFocused = it.isFocused },
                         singleLine = true,
                         isError = (mcqText.toIntOrNull() ?: 0) > subject.maxMcq,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            focusedTextColor = animatedOnSurface,
+                            unfocusedTextColor = animatedOnSurface,
+                            focusedBorderColor = animatedPrimary,
+                            unfocusedBorderColor = animatedOnSurfaceVariant,
+                            focusedLabelColor = animatedPrimary,
+                            unfocusedLabelColor = animatedOnSurfaceVariant
                         )
                     )
                 }
@@ -233,18 +246,18 @@ fun StudentMarkRow(
                                 onMarkChanged(item.mark?.mcq, newVal.toIntOrNull(), item.mark?.practical)
                             }
                         },
-                        label = { Text("Written (Max ${subject.maxWritten})", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        label = { Text("Written (Max ${subject.maxWritten})", color = animatedOnSurfaceVariant) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         modifier = Modifier.weight(1f).onFocusEvent { writtenFocused = it.isFocused },
                         singleLine = true,
                         isError = (writtenText.toIntOrNull() ?: 0) > subject.maxWritten,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            focusedTextColor = animatedOnSurface,
+                            unfocusedTextColor = animatedOnSurface,
+                            focusedBorderColor = animatedPrimary,
+                            unfocusedBorderColor = animatedOnSurfaceVariant,
+                            focusedLabelColor = animatedPrimary,
+                            unfocusedLabelColor = animatedOnSurfaceVariant
                         )
                     )
                 }
@@ -259,18 +272,18 @@ fun StudentMarkRow(
                                 onMarkChanged(item.mark?.mcq, item.mark?.written, newVal.toIntOrNull())
                             }
                         },
-                        label = { Text("Practical (Max ${subject.maxPractical})", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        label = { Text("Practical (Max ${subject.maxPractical})", color = animatedOnSurfaceVariant) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         modifier = Modifier.weight(1f).onFocusEvent { practicalFocused = it.isFocused },
                         singleLine = true,
                         isError = (practicalText.toIntOrNull() ?: 0) > subject.maxPractical,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            focusedTextColor = animatedOnSurface,
+                            unfocusedTextColor = animatedOnSurface,
+                            focusedBorderColor = animatedPrimary,
+                            unfocusedBorderColor = animatedOnSurfaceVariant,
+                            focusedLabelColor = animatedPrimary,
+                            unfocusedLabelColor = animatedOnSurfaceVariant
                         )
                     )
                 }
@@ -279,7 +292,7 @@ fun StudentMarkRow(
                 Text(
                     text = "No marks entered",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = animatedOnSurfaceVariant,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     modifier = Modifier.padding(top = 4.dp)
                 )
