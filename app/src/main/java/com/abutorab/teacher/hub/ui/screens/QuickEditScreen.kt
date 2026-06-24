@@ -38,6 +38,7 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
         Text(
             "Quick Edit Marks",
             style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
         
@@ -54,7 +55,15 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
-                label = { Text("Select Subject") }
+                label = { Text("Select Subject", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
             ExposedDropdownMenu(
                 expanded = expanded,
@@ -62,7 +71,7 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
             ) {
                 allSubjects.forEach { subj ->
                     DropdownMenuItem(
-                        text = { Text(subj.title) },
+                        text = { Text(subj.title, color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             viewModel.selectSubject(subj.id)
                             expanded = false
@@ -115,10 +124,11 @@ fun StudentMarkRow(
 
     val defaultColor = MaterialTheme.colorScheme.surface
     var targetColor by remember { mutableStateOf(defaultColor) }
+    val highlightColor = MaterialTheme.colorScheme.primaryContainer
 
     LaunchedEffect(flashTrigger) {
         if (flashTrigger > 0) {
-            targetColor = Color(0xFFC8E6C9)
+            targetColor = highlightColor
             kotlinx.coroutines.delay(700)
             targetColor = defaultColor
         }
@@ -157,7 +167,8 @@ fun StudentMarkRow(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Roll: ${item.student.rollNumber} - ${item.student.name}", 
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             
@@ -196,11 +207,19 @@ fun StudentMarkRow(
                                 onMarkChanged(newVal.toIntOrNull(), item.mark?.written, item.mark?.practical)
                             }
                         },
-                        label = { Text("MCQ (Max ${subject.maxMcq})") },
+                        label = { Text("MCQ (Max ${subject.maxMcq})", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         modifier = Modifier.weight(1f).onFocusEvent { mcqFocused = it.isFocused },
                         singleLine = true,
-                        isError = (mcqText.toIntOrNull() ?: 0) > subject.maxMcq
+                        isError = (mcqText.toIntOrNull() ?: 0) > subject.maxMcq,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
                 
@@ -214,11 +233,19 @@ fun StudentMarkRow(
                                 onMarkChanged(item.mark?.mcq, newVal.toIntOrNull(), item.mark?.practical)
                             }
                         },
-                        label = { Text("Written (Max ${subject.maxWritten})") },
+                        label = { Text("Written (Max ${subject.maxWritten})", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         modifier = Modifier.weight(1f).onFocusEvent { writtenFocused = it.isFocused },
                         singleLine = true,
-                        isError = (writtenText.toIntOrNull() ?: 0) > subject.maxWritten
+                        isError = (writtenText.toIntOrNull() ?: 0) > subject.maxWritten,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
                 
@@ -232,11 +259,19 @@ fun StudentMarkRow(
                                 onMarkChanged(item.mark?.mcq, item.mark?.written, newVal.toIntOrNull())
                             }
                         },
-                        label = { Text("Practical (Max ${subject.maxPractical})") },
+                        label = { Text("Practical (Max ${subject.maxPractical})", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         modifier = Modifier.weight(1f).onFocusEvent { practicalFocused = it.isFocused },
                         singleLine = true,
-                        isError = (practicalText.toIntOrNull() ?: 0) > subject.maxPractical
+                        isError = (practicalText.toIntOrNull() ?: 0) > subject.maxPractical,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
             }
