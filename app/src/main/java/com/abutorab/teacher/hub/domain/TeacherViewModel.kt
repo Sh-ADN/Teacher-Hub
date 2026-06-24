@@ -55,6 +55,14 @@ class TeacherViewModel(
     val syncManager = com.abutorab.teacher.hub.sync.SyncManager(repository)
 
 
+    private val themePreference = com.abutorab.teacher.hub.util.ThemePreference.getInstance(application)
+    val themeState = themePreference.themeFlow
+
+    fun toggleTheme(isCurrentlyDark: Boolean) {
+        val newTheme = if (isCurrentlyDark) "light" else "dark"
+        themePreference.setTheme(newTheme)
+    }
+
     // --- GLOBAL SCOPE STATE ---
     private val _selectedYear = MutableStateFlow(2026)
     val selectedYear = _selectedYear.asStateFlow()

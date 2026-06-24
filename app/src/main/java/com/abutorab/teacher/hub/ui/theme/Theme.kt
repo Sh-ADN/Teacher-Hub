@@ -8,6 +8,8 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme =
@@ -34,14 +36,23 @@ fun MyApplicationTheme(
   dynamicColor: Boolean = false,
   content: @Composable () -> Unit,
 ) {
+  val context = LocalContext.current
+  val themePreference = com.abutorab.teacher.hub.util.ThemePreference.getInstance(context)
+  val storedTheme by themePreference.themeFlow.collectAsState()
+  
+  val effectiveDarkTheme = when (storedTheme) {
+      "light" -> false
+      "dark" -> true
+      else -> darkTheme
+  }
+
   val colorScheme =
     when {
       dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        val context = LocalContext.current
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        if (effectiveDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
       }
 
-      darkTheme -> DarkColorScheme
+      effectiveDarkTheme -> DarkColorScheme
       else -> LightColorScheme
     }
 

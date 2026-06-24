@@ -1,20 +1,29 @@
 package com.abutorab.teacher.hub.ui.screens
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -37,6 +46,14 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    val themeState by viewModel.themeState.collectAsStateWithLifecycle()
+    val isSystemDark = isSystemInDarkTheme()
+    val isDarkTheme = when (themeState) {
+        "light" -> false
+        "dark" -> true
+        else -> isSystemDark
+    }
 
     LaunchedEffect(selectedTerm, currentRoute) {
         if (selectedTerm == "SOMONNITO" && currentRoute == "quick_edit") {
@@ -145,6 +162,12 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Default.Menu, contentDescription = "Open Navigation Drawer")
                         }
+                    },
+                    actions = {
+                        ThemeToggleButton(
+                            isDarkTheme = isDarkTheme,
+                            onThemeToggle = { viewModel.toggleTheme(isDarkTheme) }
+                        )
                     }
                 )
             },
@@ -204,6 +227,42 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                 composable("tabulation") { TabulationScreen(viewModel) }
                 composable("marksheet") { MarksheetScreen(viewModel) }
                 composable("settings") { SettingsScreen(viewModel) }
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemeToggleButton(
+    isDarkTheme: Boolean,
+    onThemeToggle: () -> Unit
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (isDarkTheme) 360f else 0f,
+        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
+        label = "ThemeToggleRotation"
+    )
+
+    IconButton(onClick = onThemeToggle) {
+        Box(modifier = Modifier.graphicsLayer(rotationZ = rotation)) {
+            Crossfade(
+                targetState = isDarkTheme,
+                animationSpec = tween(durationMillis = 500),
+                label = "ThemeToggleCrossfade"
+            ) { dark ->
+                if (dark) {
+                    Icon(
+                        imageVector = Icons.Filled.WbSunny,
+                        contentDescription = "Switch to light theme",
+                        tint = Color(0xFFFFC107)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.Nightlight,
+                        contentDescription = "Switch to dark theme",
+                        tint = Color(0xFF2C3E50)
+                    )
+                }
             }
         }
     }
