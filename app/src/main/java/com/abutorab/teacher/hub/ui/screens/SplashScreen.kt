@@ -71,6 +71,7 @@ fun SplashScreen(onFinished: () -> Unit) {
             text = "Teacher Hub",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .alpha(alphaAnim)
                 .scale(scaleAnim)
