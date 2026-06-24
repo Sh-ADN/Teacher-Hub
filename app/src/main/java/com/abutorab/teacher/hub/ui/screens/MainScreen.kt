@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -36,6 +37,15 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(selectedTerm, currentRoute) {
+        if (selectedTerm == "SOMONNITO" && currentRoute == "quick_edit") {
+            navController.navigate("tabulation") {
+                popUpTo("quick_edit") { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
