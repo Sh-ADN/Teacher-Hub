@@ -219,7 +219,7 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
             NavHost(
                 navController = navController,
                 startDestination = "quick_edit",
-                modifier = Modifier.padding(innerPadding).fillMaxSize()
+                modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding).fillMaxSize()
             ) {
                 composable("students") { StudentsScreen(viewModel) }
                 composable("subjects") { SubjectsScreen(viewModel) }

@@ -101,7 +101,7 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().imePadding(),
                     contentPadding = PaddingValues(16.dp, bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {

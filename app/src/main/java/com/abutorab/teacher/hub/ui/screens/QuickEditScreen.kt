@@ -90,7 +90,7 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
         // Students List
         if (selectedSubject != null) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().imePadding(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 0.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -199,14 +199,7 @@ fun StudentMarkRow(
 
                 LaunchedEffect(mcqFocused, writtenFocused, practicalFocused) {
                     if (mcqFocused || writtenFocused || practicalFocused) {
-                        cardRequester.bringIntoView(
-                            androidx.compose.ui.geometry.Rect(
-                                left = 0f,
-                                top = -2000f,
-                                right = cardSize.width,
-                                bottom = cardSize.height + 24f
-                            )
-                        )
+                        cardRequester.bringIntoView()
                     }
                 }
 
