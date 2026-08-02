@@ -67,7 +67,13 @@ jobs:
           echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
       - name: Decode google-services.json
         run: |
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > app/google-services.json
+          if echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | grep -q "^{"; then
+            echo "Secret is raw JSON. Writing directly."
+            echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" > app/google-services.json
+          else
+            echo "Secret is base64. Decoding..."
+            echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > app/google-services.json
+          fi
 
       - name: Build release APK
         env:
