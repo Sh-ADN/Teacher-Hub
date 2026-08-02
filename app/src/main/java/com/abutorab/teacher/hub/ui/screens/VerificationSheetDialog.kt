@@ -238,15 +238,21 @@ private fun SheetHeader(year: Int, term: String, subject: SubjectEntity, useBeng
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Text(SCHOOL_NAME, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("পরীক্ষা: ${examPeriodLabel(term)}, ${localize(year.toString(), useBengali)}", style = MaterialTheme.typography.bodySmall)
-            Text("শ্রেণি: নবম, শাখা: খ", style = MaterialTheme.typography.bodySmall)
-        }
+        Text(
+            text = "পরীক্ষা: ${examPeriodLabel(term)}, ${localize(year.toString(), useBengali)}",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(4.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("বিষয়: ${subject.title}", style = MaterialTheme.typography.bodySmall)
-            Text("পত্র: ${paperLabel(subject.title)}", style = MaterialTheme.typography.bodySmall)
-        }
+        Text(
+            text = "বিষয়: ${subject.title}",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(10.dp))
         Surface(
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
