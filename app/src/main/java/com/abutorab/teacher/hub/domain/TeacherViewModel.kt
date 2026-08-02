@@ -243,36 +243,78 @@ class TeacherViewModel(
             val rawResults = studentMarks.associateBy { it.subjectId }
             
             // Build full results map ensuring every subject exists (even if missing/null)
-            var totalMarks = 0
-            var totalPoints = 0.0
-            var hasFail = false
-            var failedSubjectCount = 0
-            var normalSubjectCount = 0
-            
             val results = subjects.associate { subj ->
                 val mark = rawResults[subj.id]
-                val result = SubjectResult(subj, mark?.mcq, mark?.written, mark?.practical)
-                
-                val isInputted = mark?.mcq != null || mark?.written != null || mark?.practical != null
-                
-                if (isInputted) {
-                    totalMarks += result.total
-                    
-                    val grade = result.grade
-                    if (grade.point == 0.0) {
-                        hasFail = true
-                        failedSubjectCount++
-                    }
+                subj.id to SubjectResult(subj, mark?.mcq, mark?.written, mark?.practical)
+            }
+            
+            var totalMarks = 0
+            var totalPoints = 0.0
+            var failedSubjectCount = 0
+            var normalSubjectCount = 0
 
-                    totalPoints += grade.point
+            val bangla1 = results.values.find { it.subject.title.contains("bangla", true) && it.subject.title.contains("1st", true) }
+            val bangla2 = results.values.find { it.subject.title.contains("bangla", true) && it.subject.title.contains("2nd", true) }
+            val english1 = results.values.find { it.subject.title.contains("english", true) && it.subject.title.contains("1st", true) }
+            val english2 = results.values.find { it.subject.title.contains("english", true) && it.subject.title.contains("2nd", true) }
+
+            val combinedSubjects = setOfNotNull(bangla1?.subject?.id, bangla2?.subject?.id, english1?.subject?.id, english2?.subject?.id)
+
+            fun processCombined(paper1: SubjectResult?, paper2: SubjectResult?) {
+                val p1Inputted = paper1?.let { it.mcq != null || it.written != null || it.practical != null } == true
+                val p2Inputted = paper2?.let { it.mcq != null || it.written != null || it.practical != null } == true
+                
+                if (paper1 != null && paper2 != null) {
+                    if (p1Inputted || p2Inputted) {
+                        val total = (if (p1Inputted) paper1.total else 0) + (if (p2Inputted) paper2.total else 0)
+                        totalMarks += total
+                        
+                        val combinedGrade = calculateGrade(total, paper1.subject.maxMarks + paper2.subject.maxMarks)
+                        
+                        if (combinedGrade.point == 0.0) {
+                            failedSubjectCount++
+                        }
+                        
+                        totalPoints += combinedGrade.point
+                        normalSubjectCount++
+                    }
+                } else if (paper1 != null && p1Inputted) {
+                    totalMarks += paper1.total
+                    if (paper1.grade.point == 0.0) failedSubjectCount++
+                    totalPoints += paper1.grade.point
+                    normalSubjectCount++
+                } else if (paper2 != null && p2Inputted) {
+                    totalMarks += paper2.total
+                    if (paper2.grade.point == 0.0) failedSubjectCount++
+                    totalPoints += paper2.grade.point
                     normalSubjectCount++
                 }
-                
-                subj.id to result
+            }
+
+            processCombined(bangla1, bangla2)
+            processCombined(english1, english2)
+
+            results.values.forEach { result ->
+                if (!combinedSubjects.contains(result.subject.id)) {
+                    val isInputted = result.mcq != null || result.written != null || result.practical != null
+                    if (isInputted) {
+                        totalMarks += result.total
+                        
+                        val grade = result.grade
+                        if (grade.point == 0.0) {
+                            failedSubjectCount++
+                        }
+
+                        totalPoints += grade.point
+                        normalSubjectCount++
+                    }
+                }
             }
 
             var finalGpa = 0.0
             var finalGrade = if (normalSubjectCount == 0) "-" else "F"
+            
+            val hasFail = failedSubjectCount > 0
 
             if (!hasFail && normalSubjectCount > 0) {
                 finalGpa = totalPoints / normalSubjectCount
