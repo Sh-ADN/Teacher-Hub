@@ -15,11 +15,15 @@ import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +50,7 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showVerificationSheet by remember { mutableStateOf(false) }
 
     val themeState by viewModel.themeState.collectAsStateWithLifecycle()
     val isSystemDark = isSystemInDarkTheme()
@@ -164,6 +169,11 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                         }
                     },
                     actions = {
+                        if (currentRoute == "quick_edit") {
+                            IconButton(onClick = { showVerificationSheet = true }) {
+                                Icon(Icons.Default.Visibility, contentDescription = "Verification Sheet")
+                            }
+                        }
                         ThemeToggleButton(
                             isDarkTheme = isDarkTheme,
                             onThemeToggle = { viewModel.toggleTheme(isDarkTheme) }
@@ -216,6 +226,22 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                 }
             }
         ) { innerPadding ->
+            if (showVerificationSheet) {
+                val subject by viewModel.selectedSubject.collectAsStateWithLifecycle()
+                val data by viewModel.activeQuickEditData.collectAsStateWithLifecycle()
+                
+                if (subject != null) {
+                    VerificationSheetDialog(
+                        year = selectedYear,
+                        term = selectedTerm,
+                        subject = subject!!,
+                        students = data.map { it.student },
+                        marks = data.mapNotNull { it.mark },
+                        onDismiss = { showVerificationSheet = false }
+                    )
+                }
+            }
+
             NavHost(
                 navController = navController,
                 startDestination = "quick_edit",
