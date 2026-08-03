@@ -83,7 +83,7 @@ enum class SubjectCategory(val defaultName: String) {
     ENGLISH_1("ইংরেজি ১ম"),
     ENGLISH_2("ইংরেজি ২য়"),
     MATH("গণিত"),
-    RELIGION("ইসলাম / হিন্দু / বৌদ্ধ"),
+    RELIGION("ধর্মীয় শিক্ষা"),
     AGRICULTURE("কৃষি শিক্ষা"),
     SCIENCE("সাধারণ বিজ্ঞান"),
     BGS("বাংলাদেশ ও বিশ্বপরিচয়"),
@@ -184,16 +184,7 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
                         val matchedSubject = findSubjectForCategory(category, allSubjects)
                         val sr = if (matchedSubject != null) row.results[matchedSubject.id] else null
                         
-                        var displayName = category.defaultName
-                        if (category == SubjectCategory.RELIGION && matchedSubject != null) {
-                            val titleLower = matchedSubject.title.lowercase()
-                            displayName = when {
-                                titleLower.contains("islam") || titleLower.contains("ইসলাম") -> "ইসলাম শিক্ষা"
-                                titleLower.contains("hindu") || titleLower.contains("হিন্দু") -> "হিন্দু ধর্ম"
-                                titleLower.contains("buddh") || titleLower.contains("বৌদ্ধ") -> "বৌদ্ধ ধর্ম"
-                                else -> matchedSubject.title
-                            }
-                        }
+                        val displayName = category.defaultName
                         
                         val isFailed = sr?.grade?.point == 0.0 && sr.total > 0
                         
