@@ -9,6 +9,9 @@ interface AppDao {
     @Query("SELECT * FROM subjects ORDER BY title ASC")
     fun getAllSubjects(): Flow<List<SubjectEntity>>
 
+    @Query("SELECT * FROM subjects")
+    suspend fun getAllSubjectsOnce(): List<SubjectEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubject(subject: SubjectEntity)
 

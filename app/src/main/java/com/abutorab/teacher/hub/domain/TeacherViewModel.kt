@@ -119,6 +119,7 @@ class TeacherViewModel(
     init {
         viewModelScope.launch {
             repository.createInitialDataIfEmpty()
+            repository.ensurePredefinedSubjectsExist()
         }
     }
 

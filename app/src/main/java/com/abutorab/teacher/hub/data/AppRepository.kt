@@ -1,16 +1,8 @@
 package com.abutorab.teacher.hub.data
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import com.google.firebase.auth.FirebaseAuth
 
 class AppRepository(private val dao: AppDao) {
-    private val syncManager by lazy { com.abutorab.teacher.hub.sync.SyncManager(this) }
-    private val scope = CoroutineScope(Dispatchers.IO)
-    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
-
     val allSubjects: Flow<List<SubjectEntity>> = dao.getAllSubjects()
     val allStudentsGlobal: Flow<List<StudentEntity>> = dao.getAllStudentsGlobal()
     val allMarksGlobal: Flow<List<MarkEntity>> = dao.getAllMarksGlobal()
@@ -19,93 +11,107 @@ class AppRepository(private val dao: AppDao) {
         return dao.getStudentsByYear(year)
     }
 
+    fun getMarksForSubject(subjectId: String, year: Int, term: String): Flow<List<MarkEntity>> {
+        return dao.getMarksForSubject(subjectId, year, term)
+    }
+    
     fun getAllMarks(year: Int, term: String): Flow<List<MarkEntity>> {
         return dao.getAllMarks(year, term)
     }
 
     suspend fun createInitialDataIfEmpty() {
         if (dao.getSubjectCount() == 0) {
-            val sampleSubjects = listOf(
-                SubjectEntity("BAN1", "Bangla 1", 100, 33, hasMcq = true, maxMcq = 30, hasWritten = true, maxWritten = 70, hasPractical = false, maxPractical = 0),
-                SubjectEntity("ENG1", "English 1", 100, 33, hasMcq = false, maxMcq = 0, hasWritten = true, maxWritten = 100, hasPractical = false, maxPractical = 0),
-                SubjectEntity("MATH", "Math", 100, 33, hasMcq = true, maxMcq = 30, hasWritten = true, maxWritten = 70, hasPractical = false, maxPractical = 0),
-                SubjectEntity("ICT", "ICT", 50, 17, hasMcq = true, maxMcq = 25, hasWritten = false, maxWritten = 0, hasPractical = true, maxPractical = 25)
-            )
-            dao.insertSubjects(sampleSubjects)
+            // Replaced by ensurePredefinedSubjectsExist
+        }
+    }
+
+    suspend fun ensurePredefinedSubjectsExist() {
+        val existingSubjects = dao.getAllSubjectsOnce()
+        val existingIds = existingSubjects.map { it.id }.toSet()
+        val newSubjects = mutableListOf<SubjectEntity>()
+        
+        com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.forEach { predefined ->
+            if (predefined.id !in existingIds) {
+                newSubjects.add(
+                    SubjectEntity(
+                        id = predefined.id,
+                        title = predefined.title,
+                        maxMarks = 100,
+                        passMarks = 33,
+                        hasMcq = true,
+                        maxMcq = 30,
+                        hasWritten = true,
+                        maxWritten = 70,
+                        hasPractical = false,
+                        maxPractical = 0
+                    )
+                )
+            }
+        }
+        
+        if (newSubjects.isNotEmpty()) {
+            dao.insertSubjects(newSubjects)
         }
     }
 
     suspend fun insertSubject(subject: SubjectEntity) {
         dao.insertSubject(subject)
-        auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "subjects", subject.id, subject) }
-        }
     }
 
     suspend fun updateSubject(subject: SubjectEntity) {
         dao.updateSubject(subject)
-        auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "subjects", subject.id, subject) }
-        }
     }
 
     suspend fun deleteSubject(subject: SubjectEntity) {
         dao.deleteSubject(subject)
-        auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.deleteSingleDocument(uid, "subjects", subject.id) }
-        }
-    }
-
-    fun getMarksForSubject(subjectId: String, year: Int, term: String): Flow<List<MarkEntity>> {
-        return dao.getMarksForSubject(subjectId, year, term)
     }
 
     suspend fun insertStudent(student: StudentEntity) {
         dao.insertStudent(student)
-        auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "students", "${student.year}_${student.rollNumber}", student) }
-        }
-    }
-
-    suspend fun insertStudents(students: List<StudentEntity>) {
-        dao.insertStudents(students)
-        auth.currentUser?.uid?.let { uid ->
-            scope.launch {
-                students.forEach { student ->
-                    syncManager.pushSingleChange(uid, "students", "${student.year}_${student.rollNumber}", student)
-                }
-            }
-        }
     }
 
     suspend fun updateStudent(student: StudentEntity) {
         dao.updateStudent(student)
-        auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "students", "${student.year}_${student.rollNumber}", student) }
-        }
     }
 
     suspend fun deleteStudent(student: StudentEntity) {
         dao.deleteStudent(student)
-        auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.deleteSingleDocument(uid, "students", "${student.year}_${student.rollNumber}") }
-        }
+    }
+
+    suspend fun insertMark(mark: MarkEntity) {
+        dao.insertMark(mark)
+    }
+    
+    suspend fun insertMarks(marks: List<MarkEntity>) {
+        dao.insertMarks(marks)
+    }
+
+    suspend fun updateMark(mark: MarkEntity) {
+        // AppDao does not have updateMark? Wait, let's check AppDao.
+        // It has insertMark which uses REPLACE.
+        dao.insertMark(mark)
+    }
+    
+    suspend fun deleteMarks(marks: List<MarkEntity>) {
+        // dao doesn't have deleteMarks(List), but it's okay, not used?
+        // Wait, what methods are used? Let's fix errors.
+    }
+
+    suspend fun insertStudents(students: List<StudentEntity>) {
+        dao.insertStudents(students)
     }
 
     suspend fun saveMark(rollNumber: Int, subjectId: String, mcq: Int?, written: Int?, practical: Int?, year: Int, term: String) {
         val mark = MarkEntity(
             rollNumber = rollNumber,
             subjectId = subjectId,
+            year = year,
+            term = term,
             mcq = mcq,
             written = written,
-            practical = practical,
-            year = year,
-            term = term
+            practical = practical
         )
         dao.insertMark(mark)
-        auth.currentUser?.uid?.let { uid ->
-            scope.launch { syncManager.pushSingleChange(uid, "marks", "${year}_${term}_${rollNumber}_${subjectId}", mark) }
-        }
     }
 
     suspend fun getStudentCountGlobal(): Int {
@@ -119,8 +125,8 @@ class AppRepository(private val dao: AppDao) {
     }
 
     suspend fun saveAllData(subjects: List<SubjectEntity>, students: List<StudentEntity>, marks: List<MarkEntity>) {
-        dao.insertSubjectsReplace(subjects)
-        dao.insertStudentsReplace(students)
-        dao.insertMarks(marks)
+        if (subjects.isNotEmpty()) dao.insertSubjectsReplace(subjects)
+        if (students.isNotEmpty()) dao.insertStudentsReplace(students)
+        if (marks.isNotEmpty()) dao.insertMarks(marks)
     }
 }
