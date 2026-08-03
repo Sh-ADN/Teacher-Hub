@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.abutorab.teacher.hub.data.SubjectEntity
 import com.abutorab.teacher.hub.domain.TabulationRow
 import com.abutorab.teacher.hub.domain.TeacherViewModel
+import com.abutorab.teacher.hub.util.NumeralFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +41,8 @@ fun MarksheetScreen(viewModel: TeacherViewModel) {
         allSubjectsRaw.sortedBy { subj ->
             val idx = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.indexOfFirst { it.id == subj.id }
             if (idx == -1) Int.MAX_VALUE else idx
+        }.filter { subj ->
+            com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.any { it.id == subj.id }
         }
     }
 
@@ -91,18 +94,19 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
             HorizontalDivider()
             Spacer(Modifier.height(12.dp))
             Text(row.student.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-            Text("Roll ${row.student.rollNumber}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("রোল ${NumeralFormat.localize(row.student.rollNumber.toString())}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                SummaryStat("Total", row.totalMarks.toString())
+                SummaryStat("মোট", row.totalMarks.toString(), localize = true)
                 val isNoMarks = row.finalGrade == "-"
-                SummaryStat("GPA", if (isNoMarks) "-" else row.finalGpa.toString())
+                SummaryStat("জিপিএ", if (isNoMarks) "-" else row.finalGpa.toString(), localize = false)
                 SummaryStat(
-                    "Grade",
+                    "গ্রেড",
                     row.finalGrade,
-                    valueColor = if (row.finalGpa == 0.0 && !isNoMarks) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary
+                    valueColor = if (row.finalGpa == 0.0 && !isNoMarks) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
+                    localize = false
                 )
-                SummaryStat("Rank", row.meritPosition.toString())
+                SummaryStat("মেধা স্থান", row.meritPosition.toString(), localize = true)
             }
         }
     }
@@ -113,25 +117,26 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
     ) {
         Column(modifier = Modifier.padding(top = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-                LedgerHeaderCell("Subject", Modifier.weight(1f), TextAlign.Start)
-                LedgerHeaderCell("MCQ", Modifier.width(42.dp))
-                LedgerHeaderCell("Wri", Modifier.width(42.dp))
-                LedgerHeaderCell("Pra", Modifier.width(42.dp))
-                LedgerHeaderCell("Total", Modifier.width(46.dp))
-                LedgerHeaderCell("Grade", Modifier.width(44.dp))
+                LedgerHeaderCell("বিষয়", Modifier.weight(1f), TextAlign.Start)
+                LedgerHeaderCell("নৈর্ব্যঃ", Modifier.width(42.dp))
+                LedgerHeaderCell("রচনা", Modifier.width(42.dp))
+                LedgerHeaderCell("ব্যঃ", Modifier.width(42.dp))
+                LedgerHeaderCell("মোট", Modifier.width(46.dp))
+                LedgerHeaderCell("গ্রেড", Modifier.width(44.dp))
             }
             HorizontalDivider()
             
             allSubjects.forEachIndexed { index, subj ->
                 val sr = row.results[subj.id]
                 val isFailed = sr?.grade?.point == 0.0 && sr.total > 0
+                val bengaliTitle = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.find { it.id == subj.id }?.bengaliTitle ?: subj.title
                 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        subj.title,
+                        bengaliTitle,
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (sr == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
@@ -149,7 +154,8 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
                         sr?.grade?.letter ?: "-",
                         Modifier.width(44.dp),
                         color = if (isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
-                        bold = sr != null
+                        bold = sr != null,
+                        localize = false
                     )
                 }
                 if (index < allSubjects.lastIndex) HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
@@ -160,7 +166,7 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Grand Total-",
+                    "মোট নম্বর-",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -180,10 +186,10 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
 }
 
 @Composable
-private fun SummaryStat(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.tertiary) {
+private fun SummaryStat(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.tertiary, localize: Boolean = true) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            value,
+            NumeralFormat.localize(value, localize),
             style = MaterialTheme.typography.headlineSmall,
             color = valueColor,
             fontWeight = FontWeight.Bold
@@ -205,9 +211,9 @@ private fun LedgerHeaderCell(text: String, modifier: Modifier = Modifier, align:
 }
 
 @Composable
-private fun LedgerValueCell(text: String, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.onSurface, bold: Boolean = false) {
+private fun LedgerValueCell(text: String, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.onSurface, bold: Boolean = false, localize: Boolean = true) {
     Text(
-        text,
+        NumeralFormat.localize(text, localize),
         style = MaterialTheme.typography.bodyMedium,
         color = color,
         textAlign = TextAlign.Center,

@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.abutorab.teacher.hub.domain.TeacherViewModel
+import com.abutorab.teacher.hub.util.NumeralFormat
 
 private val FailRed = Color(0xFFE53935)
 
@@ -31,16 +32,18 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
         allSubjectsRaw.sortedBy { subj ->
             val idx = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.indexOfFirst { it.id == subj.id }
             if (idx == -1) Int.MAX_VALUE else idx
+        }.filter { subj ->
+            com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.any { it.id == subj.id }
         }
     }
 
-    val summaryColumns = remember { listOf("Total" to 64.dp, "GPA" to 56.dp, "Grade" to 56.dp, "Rank" to 48.dp) }
+    val summaryColumns = remember { listOf("মোট" to 64.dp, "জিপিএ" to 56.dp, "গ্রেড" to 56.dp, "মেধা স্থান" to 64.dp) }
     val horizontalScrollState = rememberScrollState()
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            "Tabulation Sheet",
+            "ট্যাবুলেশন শিট",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
@@ -57,12 +60,13 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                 modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(vertical = 10.dp),
                 verticalAlignment = Alignment.Top
             ) {
-                HeaderCell("Roll", 44.dp)
-                HeaderCell("Name", 120.dp, alignStart = true)
+                HeaderCell("রোল", 44.dp)
+                HeaderCell("নাম", 120.dp, alignStart = true)
                 Row(modifier = Modifier.weight(1f).horizontalScroll(horizontalScrollState)) {
                     allSubjects.forEach { subj -> 
+                        val bengaliTitle = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.find { it.id == subj.id }?.bengaliTitle ?: subj.title
                         val width = if (subj.hasMcq && subj.hasWritten && subj.hasPractical) 152.dp else if ((subj.hasMcq && subj.hasWritten) || (subj.hasWritten && subj.hasPractical) || (subj.hasMcq && subj.hasPractical)) 112.dp else 76.dp
-                        HeaderCell(subj.title, width) 
+                        HeaderCell(bengaliTitle, width) 
                     }
                     summaryColumns.forEach { (label, width) -> HeaderCell(label, width) }
                 }
@@ -78,7 +82,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         DataCell(rowData.student.rollNumber.toString(), 44.dp)
-                        DataCell(rowData.student.name, 120.dp, alignStart = true)
+                        DataCell(rowData.student.name, 120.dp, alignStart = true, localize = false)
                         Row(modifier = Modifier.weight(1f).horizontalScroll(horizontalScrollState)) {
                             allSubjects.forEach { subj ->
                                 val width = if (subj.hasMcq && subj.hasWritten && subj.hasPractical) 152.dp else if ((subj.hasMcq && subj.hasWritten) || (subj.hasWritten && subj.hasPractical) || (subj.hasMcq && subj.hasPractical)) 112.dp else 76.dp
@@ -95,13 +99,14 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                             }
                             DataCell(rowData.totalMarks.toString(), 64.dp)
                             val isNoMarks = rowData.finalGrade == "-"
-                            DataCell(if (isNoMarks) "-" else rowData.finalGpa.toString(), 56.dp, color = MaterialTheme.colorScheme.tertiary)
+                            DataCell(if (isNoMarks) "-" else rowData.finalGpa.toString(), 56.dp, color = MaterialTheme.colorScheme.tertiary, localize = false)
                             DataCell(
                                 rowData.finalGrade,
                                 56.dp,
-                                color = if (rowData.finalGpa == 0.0 && !isNoMarks) FailRed else MaterialTheme.colorScheme.onSurface
+                                color = if (rowData.finalGpa == 0.0 && !isNoMarks) FailRed else MaterialTheme.colorScheme.onSurface,
+                                localize = false
                             )
-                            DataCell(rowData.meritPosition.toString(), 48.dp)
+                            DataCell(rowData.meritPosition.toString(), 64.dp)
                         }
                     }
                     HorizontalDivider()
@@ -127,10 +132,10 @@ private fun HeaderCell(text: String, width: Dp, alignStart: Boolean = false) {
 }
 
 @Composable
-private fun DataCell(text: String, width: Dp, alignStart: Boolean = false, color: Color = MaterialTheme.colorScheme.onSurface, fontWeight: FontWeight = FontWeight.Bold) {
+private fun DataCell(text: String, width: Dp, alignStart: Boolean = false, color: Color = MaterialTheme.colorScheme.onSurface, fontWeight: FontWeight = FontWeight.Bold, localize: Boolean = true) {
     Box(modifier = Modifier.width(width).padding(horizontal = 4.dp), contentAlignment = if (alignStart) Alignment.CenterStart else Alignment.Center) {
         Text(
-            text,
+            NumeralFormat.localize(text, localize),
             style = MaterialTheme.typography.bodyLarge,
             color = color,
             fontWeight = fontWeight,

@@ -26,17 +26,20 @@ import com.abutorab.teacher.hub.domain.TeacherViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectsScreen(viewModel: TeacherViewModel) {
-    val allSubjects by viewModel.allSubjects.collectAsStateWithLifecycle()
-    var showAddDialog by remember { mutableStateOf(false) }
+    val allSubjectsRaw by viewModel.allSubjects.collectAsStateWithLifecycle()
+    val allSubjects = remember(allSubjectsRaw) {
+        allSubjectsRaw.sortedBy { subj ->
+            val idx = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.indexOfFirst { it.id == subj.id }
+            if (idx == -1) Int.MAX_VALUE else idx
+        }.filter { subj ->
+            com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.any { it.id == subj.id }
+        }
+    }
+    
     var editingSubject by remember { mutableStateOf<SubjectEntity?>(null) }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Subject")
-            }
-        }
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -54,6 +57,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                 )
             }
             items(allSubjects, key = { it.id }) { subject ->
+                val bengaliTitle = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.find { it.id == subject.id }?.bengaliTitle ?: subject.title
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -78,18 +82,14 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "${subject.title} [ID: ${subject.id}]",
-                                    style = MaterialTheme.typography.titleMedium
+                                    text = "$bengaliTitle [ID: ${subject.id}]",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.weight(1f)
                                 )
-                                Row {
-                                    IconButton(onClick = { editingSubject = subject }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Edit")
-                                    }
-                                    IconButton(onClick = { viewModel.deleteSubject(subject) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete")
-                                    }
+                                IconButton(onClick = { editingSubject = subject }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit")
                                 }
                             }
                             Text("Total Max: ${subject.maxMarks} | Pass: ${subject.passMarks}", style = MaterialTheme.typography.bodyMedium)
@@ -106,7 +106,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
         }
     }
 
-    if (showAddDialog || editingSubject != null) {
+    if (editingSubject != null) {
         val st = editingSubject
         var id by remember { mutableStateOf(st?.id ?: "") }
         var title by remember { mutableStateOf(st?.title ?: "") }
@@ -124,63 +124,29 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
 
         AlertDialog(
             onDismissRequest = { 
-                showAddDialog = false
                 editingSubject = null
             },
-            title = { Text(if (st == null) "Add Subject" else "Edit Subject") },
+            title = { Text("Edit Subject") },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
-                    var expanded by remember { mutableStateOf(false) }
-                    if (st == null) {
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = it }
-                        ) {
-                            OutlinedTextField(
-                                value = if (title.isBlank()) "Select Subject" else "$title [$id]",
-                                onValueChange = {},
-                                readOnly = true,
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
-                                label = { Text("Select Subject") }
-                            )
-                            ExposedDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }
-                            ) {
-                                com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.forEach { subj ->
-                                    DropdownMenuItem(
-                                        text = { Text("${subj.title} [${subj.id}]") },
-                                        onClick = {
-                                            id = subj.id
-                                            title = subj.title
-                                            expanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        OutlinedTextField(
-                            value = "$title [$id]",
-                            onValueChange = {},
-                            label = { Text("Subject") },
-                            readOnly = true,
-                            enabled = false,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = {},
+                        label = { Text("Subject") },
+                        readOnly = true,
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(value = maxMarks, onValueChange = { maxMarks = it }, label = { Text("Total Max Marks") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f), singleLine = true)
                         OutlinedTextField(value = passMarks, onValueChange = { passMarks = it }, label = { Text("Pass Marks") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f), singleLine = true)
                     }
-
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Components", style = MaterialTheme.typography.titleSmall)
-
+                    
                     // MCQ
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Checkbox(checked = hasMcq, onCheckedChange = { hasMcq = it })
@@ -190,7 +156,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                             OutlinedTextField(value = maxMcq, onValueChange = { maxMcq = it }, label = { Text("Max") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth().weight(1f), singleLine = true)
                         }
                     }
-
+                    
                     // Written
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Checkbox(checked = hasWritten, onCheckedChange = { hasWritten = it })
@@ -200,7 +166,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                             OutlinedTextField(value = maxWritten, onValueChange = { maxWritten = it }, label = { Text("Max") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth().weight(1f), singleLine = true)
                         }
                     }
-
+                    
                     // Practical
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Checkbox(checked = hasPractical, onCheckedChange = { hasPractical = it })
@@ -223,22 +189,16 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                         
                         if (id.isNotBlank() && title.isNotBlank()) {
                             val newSubject = SubjectEntity(id, title, parsedMax, parsedPass, hasMcq, pmcq, hasWritten, pwritten, hasPractical, ppractical)
-                            if (st == null) {
-                                viewModel.addSubject(id, title, parsedMax, parsedPass, hasMcq, pmcq, hasWritten, pwritten, hasPractical, ppractical)
-                            } else {
-                                viewModel.updateSubject(newSubject)
-                            }
-                            showAddDialog = false
+                            viewModel.updateSubject(newSubject)
                             editingSubject = null
                         }
                     }
                 ) {
-                    Text(if (st == null) "Add" else "Save")
+                    Text("Save")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { 
-                    showAddDialog = false
                     editingSubject = null
                 }) {
                     Text("Cancel")
