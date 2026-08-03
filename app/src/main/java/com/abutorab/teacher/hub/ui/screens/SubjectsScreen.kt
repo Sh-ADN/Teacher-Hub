@@ -133,19 +133,46 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
-                    OutlinedTextField(
-                        value = id,
-                        onValueChange = { id = it },
-                        label = { Text("Subject ID (e.g., ENG1)") },
-                        singleLine = true,
-                        enabled = st == null // ID cannot be edited
-                    )
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("Title (e.g., English 1)") },
-                        singleLine = true
-                    )
+                    var expanded by remember { mutableStateOf(false) }
+                    if (st == null) {
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it }
+                        ) {
+                            OutlinedTextField(
+                                value = if (title.isBlank()) "Select Subject" else "$title [$id]",
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
+                                label = { Text("Select Subject") }
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.forEach { subj ->
+                                    DropdownMenuItem(
+                                        text = { Text("${subj.title} [${subj.id}]") },
+                                        onClick = {
+                                            id = subj.id
+                                            title = subj.title
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = "$title [$id]",
+                            onValueChange = {},
+                            label = { Text("Subject") },
+                            readOnly = true,
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(value = maxMarks, onValueChange = { maxMarks = it }, label = { Text("Total Max Marks") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f), singleLine = true)
                         OutlinedTextField(value = passMarks, onValueChange = { passMarks = it }, label = { Text("Pass Marks") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f), singleLine = true)
