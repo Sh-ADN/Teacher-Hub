@@ -31,12 +31,11 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
         allSubjectsRaw.sortedBy { subj ->
             val idx = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.indexOfFirst { it.id == subj.id }
             if (idx == -1) Int.MAX_VALUE else idx
-        }.filter { subj ->
-            com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.any { it.id == subj.id }
         }
     }
     
     var editingSubject by remember { mutableStateOf<SubjectEntity?>(null) }
+    var subjectToDelete by remember { mutableStateOf<SubjectEntity?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -57,7 +56,9 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                 )
             }
             items(allSubjects, key = { it.id }) { subject ->
+                val isCustom = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.none { it.id == subject.id }
                 val bengaliTitle = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.find { it.id == subject.id }?.bengaliTitle ?: subject.title
+                
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -88,8 +89,15 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.weight(1f)
                                 )
-                                IconButton(onClick = { editingSubject = subject }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                Row {
+                                    IconButton(onClick = { editingSubject = subject }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                    }
+                                    if (isCustom) {
+                                        IconButton(onClick = { subjectToDelete = subject }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                        }
+                                    }
                                 }
                             }
                             Text("Total Max: ${subject.maxMarks} | Pass: ${subject.passMarks}", style = MaterialTheme.typography.bodyMedium)
@@ -106,6 +114,70 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
         }
     }
 
+    if (subjectToDelete != null) {
+        val st = subjectToDelete!!
+        var replaceWithId by remember { mutableStateOf<String?>(null) }
+        var expanded by remember { mutableStateOf(false) }
+        
+        AlertDialog(
+            onDismissRequest = { subjectToDelete = null },
+            title = { Text("Delete Subject") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("You can just delete this subject or replace it with an existing one. If replaced, all marks for this subject will be transferred to the new one.")
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = replaceWithId?.let { id -> 
+                                allSubjects.find { it.id == id }?.let { subj ->
+                                    com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.find { p -> p.id == subj.id }?.bengaliTitle ?: subj.title
+                                }
+                            } ?: "Select replacement (optional)",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Replace with") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            allSubjects.filter { it.id != st.id }.forEach { subj ->
+                                val bTitle = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.find { p -> p.id == subj.id }?.bengaliTitle ?: subj.title
+                                DropdownMenuItem(
+                                    text = { Text(bTitle) },
+                                    onClick = {
+                                        replaceWithId = subj.id
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteSubject(st, replaceWithId)
+                        subjectToDelete = null
+                    }
+                ) {
+                    Text(if (replaceWithId != null) "Replace & Delete" else "Just Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { subjectToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     if (editingSubject != null) {
         val st = editingSubject
         var id by remember { mutableStateOf(st?.id ?: "") }
@@ -118,14 +190,12 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
         
         var hasWritten by remember { mutableStateOf(st?.hasWritten ?: true) }
         var maxWritten by remember { mutableStateOf(st?.maxWritten?.toString() ?: "70") }
-        
-        var hasPractical by remember { mutableStateOf(st?.hasPractical ?: false) }
+
+        var hasPractical by remember { mutableStateOf(st?.hasPractical ?: true) }
         var maxPractical by remember { mutableStateOf(st?.maxPractical?.toString() ?: "0") }
 
         AlertDialog(
-            onDismissRequest = { 
-                editingSubject = null
-            },
+            onDismissRequest = { editingSubject = null },
             title = { Text("Edit Subject") },
             text = {
                 Column(
@@ -148,7 +218,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                     Text("Components", style = MaterialTheme.typography.titleSmall)
                     
                     // MCQ
-                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasMcq, onCheckedChange = { hasMcq = it })
                         Text("MCQ")
                         if (hasMcq) {
@@ -158,7 +228,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                     }
                     
                     // Written
-                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasWritten, onCheckedChange = { hasWritten = it })
                         Text("Written")
                         if (hasWritten) {
@@ -168,7 +238,7 @@ fun SubjectsScreen(viewModel: TeacherViewModel) {
                     }
                     
                     // Practical
-                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = hasPractical, onCheckedChange = { hasPractical = it })
                         Text("Practical")
                         if (hasPractical) {

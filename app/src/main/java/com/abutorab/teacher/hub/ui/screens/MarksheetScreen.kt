@@ -41,8 +41,6 @@ fun MarksheetScreen(viewModel: TeacherViewModel) {
         allSubjectsRaw.sortedBy { subj ->
             val idx = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.indexOfFirst { it.id == subj.id }
             if (idx == -1) Int.MAX_VALUE else idx
-        }.filter { subj ->
-            com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.any { it.id == subj.id }
         }
     }
 

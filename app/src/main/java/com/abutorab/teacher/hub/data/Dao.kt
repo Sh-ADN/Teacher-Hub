@@ -94,4 +94,9 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMark(mark: MarkEntity)
+    @Query("SELECT * FROM marks WHERE subjectId = :subjectId")
+    suspend fun getAllMarksForSubject(subjectId: String): List<MarkEntity>
+
+    @Query("DELETE FROM marks WHERE subjectId = :subjectId")
+    suspend fun deleteAllMarksForSubject(subjectId: String)
 }

@@ -195,9 +195,9 @@ class TeacherViewModel(
         }
     }
 
-    fun deleteSubject(subject: SubjectEntity) {
+    fun deleteSubject(subject: SubjectEntity, replaceWithId: String? = null) {
         viewModelScope.launch {
-            repository.deleteSubject(subject)
+            repository.deleteSubjectAndTransferMarks(subject, replaceWithId)
         }
     }
 
@@ -348,7 +348,6 @@ class TeacherViewModel(
         // Calculate merit position
         val sortedTabulation = tabulationRows.sortedWith(
             compareBy<TabulationRow> { it.failedSubjectCount }
-                .thenByDescending { it.finalGpa }
                 .thenByDescending { it.totalMarks }
         )
         

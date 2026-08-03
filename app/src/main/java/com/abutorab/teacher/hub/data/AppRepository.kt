@@ -129,4 +129,13 @@ class AppRepository(private val dao: AppDao) {
         if (students.isNotEmpty()) dao.insertStudentsReplace(students)
         if (marks.isNotEmpty()) dao.insertMarks(marks)
     }
+    suspend fun deleteSubjectAndTransferMarks(subject: SubjectEntity, newSubjectId: String?) {
+        if (newSubjectId != null) {
+            val marks = dao.getAllMarksForSubject(subject.id)
+            val updatedMarks = marks.map { it.copy(subjectId = newSubjectId) }
+            dao.insertMarks(updatedMarks)
+        }
+        dao.deleteAllMarksForSubject(subject.id)
+        dao.deleteSubject(subject)
+    }
 }
