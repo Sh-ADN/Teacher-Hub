@@ -347,7 +347,8 @@ class TeacherViewModel(
         
         // Calculate merit position
         val sortedTabulation = tabulationRows.sortedWith(
-            compareBy<TabulationRow> { it.failedSubjectCount }
+            compareBy<TabulationRow> { if (it.finalGrade == "-") 1 else 0 } // Move unevaluated to the bottom
+                .thenBy { it.failedSubjectCount }
                 .thenByDescending { it.totalMarks }
         )
         
