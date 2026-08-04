@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +27,7 @@ private val FailRed = Color(0xFFE53935)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun TabulationScreen(viewModel: TeacherViewModel) {
+fun TabulationScreen(viewModel: TeacherViewModel, onNavigateToMarksheet: (Int) -> Unit = {}) {
     val tabulationData by viewModel.tabulationData.collectAsStateWithLifecycle()
     val allSubjectsRaw by viewModel.allSubjects.collectAsStateWithLifecycle()
     val allSubjects = remember(allSubjectsRaw) {
@@ -37,6 +39,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
 
     val summaryColumns = remember { listOf("মোট" to 64.dp, "জিপিএ" to 56.dp, "গ্রেড" to 56.dp, "মেধা স্থান" to 64.dp) }
     val horizontalScrollState = rememberScrollState()
+    var selectedStudentId by remember { mutableStateOf<Int?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
         Spacer(modifier = Modifier.height(12.dp))
@@ -45,7 +48,7 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
-
+        
         if (tabulationData.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("No data available.")
@@ -70,12 +73,25 @@ fun TabulationScreen(viewModel: TeacherViewModel) {
                 }
             }
             HorizontalDivider()
-
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(tabulationData, key = { it.student.rollNumber }) { rowData ->
+                    val isSelected = selectedStudentId == rowData.student.rollNumber
+                    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .background(backgroundColor)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = {
+                                        selectedStudentId = if (isSelected) null else rowData.student.rollNumber
+                                    },
+                                    onDoubleTap = {
+                                        onNavigateToMarksheet(rowData.student.rollNumber)
+                                    }
+                                )
+                            }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -119,27 +135,26 @@ private fun HeaderCell(text: String, width: Dp, alignStart: Boolean = false) {
     Box(modifier = Modifier.width(width).padding(horizontal = 3.dp), contentAlignment = if (alignStart) Alignment.CenterStart else Alignment.Center) {
         Text(
             text,
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
+            textAlign = if (alignStart) TextAlign.Start else TextAlign.Center,
             maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = if (alignStart) TextAlign.Start else TextAlign.Center
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
 
 @Composable
-private fun DataCell(text: String, width: Dp, alignStart: Boolean = false, color: Color = MaterialTheme.colorScheme.onSurface, fontWeight: FontWeight = FontWeight.Bold, localize: Boolean = true) {
-    Box(modifier = Modifier.width(width).padding(horizontal = 4.dp), contentAlignment = if (alignStart) Alignment.CenterStart else Alignment.Center) {
+private fun DataCell(text: String, width: Dp, alignStart: Boolean = false, color: Color = MaterialTheme.colorScheme.onSurface, localize: Boolean = true) {
+    Box(modifier = Modifier.width(width).padding(horizontal = 3.dp), contentAlignment = if (alignStart) Alignment.CenterStart else Alignment.Center) {
         Text(
             NumeralFormat.localize(text, localize),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = color,
-            fontWeight = fontWeight,
+            textAlign = if (alignStart) TextAlign.Start else TextAlign.Center,
             maxLines = 1,
-            overflow = TextOverflow.Visible,
-            textAlign = if (alignStart) TextAlign.Start else TextAlign.Center
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

@@ -217,9 +217,8 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
                         }
                         if (index < categories.lastIndex) HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     }
-                }
-                
-                HorizontalDivider(thickness = 2.dp)
+                    
+                    HorizontalDivider(thickness = 2.dp)
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -239,6 +238,7 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
                     LedgerValueCell("", Modifier.width(44.dp))
                 }
                 Spacer(Modifier.height(8.dp))
+                }
             }
         }
         Spacer(Modifier.height(16.dp))

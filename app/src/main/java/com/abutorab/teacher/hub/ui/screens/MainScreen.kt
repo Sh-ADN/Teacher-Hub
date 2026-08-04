@@ -250,7 +250,15 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                 composable("students") { StudentsScreen(viewModel) }
                 composable("subjects") { SubjectsScreen(viewModel) }
                 composable("quick_edit") { QuickEditScreen(viewModel) }
-                composable("tabulation") { TabulationScreen(viewModel) }
+                composable("tabulation") {
+                    TabulationScreen(
+                        viewModel = viewModel,
+                        onNavigateToMarksheet = { roll ->
+                            viewModel.onMarksheetSearchChanged(roll.toString())
+                            navController.navigate("marksheet")
+                        }
+                    )
+                }
                 composable("marksheet") { MarksheetScreen(viewModel) }
                 composable("settings") { SettingsScreen(viewModel) }
             }
