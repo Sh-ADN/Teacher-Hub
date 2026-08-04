@@ -35,6 +35,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.material.icons.filled.Dashboard
 import com.abutorab.teacher.hub.domain.TeacherViewModel
 import kotlinx.coroutines.launch
 
@@ -112,6 +113,20 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
+                    label = { Text("Dashboard") },
+                    selected = currentRoute == "dashboard",
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("dashboard") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
                 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 
@@ -145,6 +160,8 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                                     "marksheet" -> "Marksheet"
                                     "quick_edit" -> "Quick Edit"
                                     "settings" -> "Settings"
+                                    "dashboard" -> "Dashboard"
+                                    "merit_list" -> "Merit List"
                                     else -> "Teacher Hub"
                                 }
                             )
@@ -250,6 +267,16 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                 composable("students") { StudentsScreen(viewModel) }
                 composable("subjects") { SubjectsScreen(viewModel) }
                 composable("quick_edit") { QuickEditScreen(viewModel) }
+                composable("dashboard") { 
+                    DashboardScreen(viewModel) {
+                        navController.navigate("merit_list")
+                    } 
+                }
+                composable("merit_list") {
+                    MeritListScreen(viewModel) {
+                        navController.popBackStack()
+                    }
+                }
                 composable("tabulation") {
                     TabulationScreen(
                         viewModel = viewModel,
