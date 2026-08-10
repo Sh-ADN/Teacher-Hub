@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +39,8 @@ fun MarksheetScreen(viewModel: TeacherViewModel) {
     val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     
+    var localQuery by remember(searchQuery) { mutableStateOf(searchQuery) }
+    
     val allSubjects = remember(allSubjectsRaw) {
         allSubjectsRaw.toList()
     }
@@ -52,13 +55,26 @@ fun MarksheetScreen(viewModel: TeacherViewModel) {
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
         if (marksheet == null) {
             OutlinedTextField(
-                value = searchQuery,
-                onValueChange = viewModel::onMarksheetSearchChanged,
+                value = localQuery,
+                onValueChange = { localQuery = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text("Search by Roll Number") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                trailingIcon = {
+                    if (localQuery.isNotEmpty()) {
+                        IconButton(onClick = { 
+                            viewModel.onMarksheetSearchChanged(localQuery)
+                            focusManager.clearFocus()
+                        }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Submit Search")
+                        }
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                keyboardActions = KeyboardActions(onSearch = { 
+                    viewModel.onMarksheetSearchChanged(localQuery)
+                    focusManager.clearFocus() 
+                }),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
