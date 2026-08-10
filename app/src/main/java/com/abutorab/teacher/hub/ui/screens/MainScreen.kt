@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -189,6 +190,14 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                         if (currentRoute == "quick_edit") {
                             IconButton(onClick = { showVerificationSheet = true }) {
                                 Icon(Icons.Default.Visibility, contentDescription = "Verification Sheet")
+                            }
+                        }
+                        if (currentRoute == "marksheet") {
+                            val marksheet by viewModel.searchedMarksheet.collectAsStateWithLifecycle()
+                            if (marksheet != null) {
+                                IconButton(onClick = { viewModel.onMarksheetSearchChanged("") }) {
+                                    Icon(Icons.Default.Search, contentDescription = "Search another")
+                                }
                             }
                         }
                         ThemeToggleButton(

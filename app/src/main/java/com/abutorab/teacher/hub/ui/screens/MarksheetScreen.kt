@@ -35,35 +35,42 @@ fun MarksheetScreen(viewModel: TeacherViewModel) {
     val searchQuery by viewModel.marksheetSearchQuery.collectAsStateWithLifecycle()
     val marksheet by viewModel.searchedMarksheet.collectAsStateWithLifecycle()
     val allSubjectsRaw by viewModel.allSubjects.collectAsStateWithLifecycle()
+    val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     
     val allSubjects = remember(allSubjectsRaw) {
         allSubjectsRaw.toList()
     }
+    
+    val termText = when(selectedTerm) {
+        "ARDHOBARSHIK" -> "অর্ধবার্ষিক"
+        "BARSHIK" -> "বার্ষিক"
+        "SOMONNITO" -> "সমন্বিত"
+        else -> ""
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            "Search Marksheet",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-        
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = viewModel::onMarksheetSearchChanged,
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            placeholder = { Text("Enter Student Roll Number") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-            singleLine = true
-        )
+        if (marksheet == null) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = viewModel::onMarksheetSearchChanged,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Search by Roll Number") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        }
 
         if (marksheet != null) {
             // Remove vertical scroll from here so header can be pinned inside MarksheetCard
             Column(modifier = Modifier.weight(1f)) {
-                MarksheetCard(marksheet!!, allSubjects)
+                MarksheetCard(marksheet!!, allSubjects, termText)
             }
         } else if (searchQuery.isNotEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -130,32 +137,34 @@ fun findSubjectForCategory(category: SubjectCategory, allSubjects: List<SubjectE
 }
 
 @Composable
-fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
+fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>, termText: String) {
     Column(modifier = Modifier.fillMaxSize()) {
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text("Abutorab M.L. High School", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                Text("Mirsarai, Chattogram", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Abutorab M.L. High School", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Mirsarai, Chattogram", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(Modifier.height(8.dp))
+                Text(row.student.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                val rollStr = "Roll ${row.student.rollNumber}"
+                val subtitle = if (termText.isNotEmpty()) "$rollStr • $termText" else rollStr
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(12.dp))
-                Text(row.student.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                Text("রোল ${NumeralFormat.localize(row.student.rollNumber.toString())}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    SummaryStat("মোট", row.totalMarks.toString(), localize = true)
+                    SummaryStat("Total", row.totalMarks.toString(), localize = true)
                     val isNoMarks = row.finalGrade == "-"
-                    SummaryStat("জিপিএ", if (isNoMarks) "-" else row.finalGpa.toString(), localize = false)
+                    SummaryStat("GPA", if (isNoMarks) "-" else row.finalGpa.toString(), localize = false)
                     SummaryStat(
-                        "গ্রেড",
+                        "Grade",
                         row.finalGrade,
                         valueColor = if (row.finalGpa == 0.0 && !isNoMarks) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
                         localize = false
                     )
-                    SummaryStat("মেধা স্থান", row.meritPosition.toString(), localize = true)
+                    SummaryStat("Rank", row.meritPosition.toString(), localize = false)
                 }
             }
         }
@@ -189,7 +198,7 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
                         val isFailed = sr?.grade?.point == 0.0 && sr.total > 0
                         
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
@@ -220,7 +229,7 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>) {
                     
                     HorizontalDivider(thickness = 2.dp)
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -250,9 +259,9 @@ private fun SummaryStat(label: String, value: String, valueColor: Color = Materi
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             NumeralFormat.localize(value, localize),
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleLarge,
             color = valueColor,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Normal
         )
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
