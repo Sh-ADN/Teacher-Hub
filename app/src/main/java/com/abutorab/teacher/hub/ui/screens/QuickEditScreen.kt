@@ -26,6 +26,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.abutorab.teacher.hub.data.SubjectEntity
 import com.abutorab.teacher.hub.domain.TeacherViewModel
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DocumentScanner
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.ImageDecoder
+import android.os.Build
+import android.provider.MediaStore
+import kotlinx.coroutines.launch
+import com.abutorab.teacher.hub.network.ScannerUtil
+import com.abutorab.teacher.hub.network.ScanResultItem
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickEditScreen(viewModel: TeacherViewModel) {
@@ -38,15 +52,67 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
     val animatedOnSurface by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurface, animationSpec = tween(300))
     val animatedSurface by animateColorAsState(targetValue = MaterialTheme.colorScheme.surface, animationSpec = tween(300))
     val animatedPrimary by animateColorAsState(targetValue = MaterialTheme.colorScheme.primary, animationSpec = tween(300))
+    var isScanning by remember { mutableStateOf(false) }
+    var scanResults by remember { mutableStateOf<List<ScanResultItem>?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            isScanning = true
+            coroutineScope.launch {
+                val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val source = ImageDecoder.createSource(context.contentResolver, uri)
+                    ImageDecoder.decodeBitmap(source)
+                } else {
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                }
+                val results = ScannerUtil.scanMarksheet(bitmap)
+                isScanning = false
+                scanResults = results
+            }
+        }
+    }
+
 
     Column(modifier = Modifier.fillMaxSize().background(animatedSurfaceVariant)) {
         Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            "Quick Edit Marks",
-            style = MaterialTheme.typography.headlineMedium,
-            color = animatedOnSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Quick Edit Marks",
+                style = MaterialTheme.typography.headlineMedium,
+                color = animatedOnSurfaceVariant
+            )
+            IconButton(onClick = { 
+                launcher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) 
+            }) {
+                Icon(Icons.Default.DocumentScanner, contentDescription = "Scan Marksheet", tint = animatedPrimary)
+            }
+        }
+        
+        if (isScanning) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        
+        if (scanResults != null) {
+            AIScanDialog(
+                results = scanResults!!,
+                onDismiss = { scanResults = null },
+                onApplyAll = { results ->
+                    results.forEach { res ->
+                        viewModel.saveMark(res.roll, res.mcq, res.written, res.practical)
+                    }
+                    scanResults = null
+                }
+            )
+        }
+
         
         // Subject Selector
         var expanded by remember { mutableStateOf(false) }
@@ -151,6 +217,30 @@ fun StudentMarkRow(
     val animatedOnSurface by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurface, animationSpec = tween(300))
     val animatedOnSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurfaceVariant, animationSpec = tween(300))
     val animatedPrimary by animateColorAsState(targetValue = MaterialTheme.colorScheme.primary, animationSpec = tween(300))
+    var isScanning by remember { mutableStateOf(false) }
+    var scanResults by remember { mutableStateOf<List<ScanResultItem>?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            isScanning = true
+            coroutineScope.launch {
+                val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val source = ImageDecoder.createSource(context.contentResolver, uri)
+                    ImageDecoder.decodeBitmap(source)
+                } else {
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                }
+                val results = ScannerUtil.scanMarksheet(bitmap)
+                isScanning = false
+                scanResults = results
+            }
+        }
+    }
+
 
     val cardRequester = remember { BringIntoViewRequester() }
     var cardSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
