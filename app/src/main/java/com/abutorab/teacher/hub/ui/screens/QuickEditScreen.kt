@@ -35,6 +35,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.platform.LocalContext
 import android.graphics.ImageDecoder
 import android.os.Build
+import android.widget.Toast
 import android.provider.MediaStore
 import kotlinx.coroutines.launch
 import com.abutorab.teacher.hub.network.ScannerUtil
@@ -71,7 +72,13 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
                 }
                 val results = ScannerUtil.scanMarksheet(bitmap)
                 isScanning = false
-                scanResults = results
+                if (results == null) {
+                    Toast.makeText(context, "Failed to scan. Please try again.", Toast.LENGTH_LONG).show()
+                } else if (results.isEmpty()) {
+                    Toast.makeText(context, "No marks found, or API Key is missing.", Toast.LENGTH_LONG).show()
+                } else {
+                    scanResults = results
+                }
             }
         }
     }
@@ -236,7 +243,13 @@ fun StudentMarkRow(
                 }
                 val results = ScannerUtil.scanMarksheet(bitmap)
                 isScanning = false
-                scanResults = results
+                if (results == null) {
+                    Toast.makeText(context, "Failed to scan. Please try again.", Toast.LENGTH_LONG).show()
+                } else if (results.isEmpty()) {
+                    Toast.makeText(context, "No marks found, or API Key is missing.", Toast.LENGTH_LONG).show()
+                } else {
+                    scanResults = results
+                }
             }
         }
     }

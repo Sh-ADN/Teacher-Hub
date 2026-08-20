@@ -2,6 +2,7 @@ package com.abutorab.teacher.hub.network
 
 import android.graphics.Bitmap
 import android.util.Base64
+import android.util.Log
 import com.abutorab.teacher.hub.BuildConfig
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
@@ -32,26 +33,35 @@ object ScannerUtil {
 
     suspend fun scanMarksheet(bitmap: Bitmap): List<ScanResultItem>? = withContext(Dispatchers.IO) {
         val apiKey = BuildConfig.GEMINI_API_KEY
-        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") return@withContext emptyList() // Or throw
+        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
+            Log.e("ScannerUtil", "API Key is missing!")
+            return@withContext emptyList()
+        }
 
         val prompt = """
-            You are a helpful assistant that scans handwritten marks sheets. 
-            I will provide an image of a marks sheet. Extract the roll number and marks for each row. 
-            The language is Bengali, but the numbers might be in Bengali or English.
-            The marks typically follow this order: MCQ (নৈর্ব্য), Written (রচনা), Practical (ব্যঃ). 
-            If any field is missing or has a dash (-), use null for that field.
-            The output should be JSON in this format:
+            You are an expert assistant that extracts data from handwritten Bengali marks sheets. 
+            I will provide an image of a marks sheet. Extract the roll number (রোল নং) and marks for each row. 
+            The numbers might be written in Bengali or English digits (e.g., ১=1, ২=2, etc.). Please convert all numbers to standard English digits in the output.
+            
+            The columns typically include Roll Number and Marks.
+            The marks column might be formatted as an equation: "(নৈঃ+রঃ+ব্যবঃ = মোট)" which means "(MCQ + Written + Practical = Total)".
+            For example, a cell containing "১৫ + ৪৮ + ৬৩" means MCQ is 15, Written is 48, Practical is empty/null, and Total is 63. 
+            A cell containing "১২ + ৩২ + ১৬" means MCQ is 12, Written is 32, Practical is 16.
+            If any field is missing, empty, or has a dash (-), use null for that field.
+
+            The output MUST be a valid JSON object with a single key "results" containing an array of objects.
+            Format:
             {
               "results": [
                 {
-                  "roll": 101,
+                  "roll": 1,
                   "mcq": 15,
-                  "written": 25,
+                  "written": 48,
                   "practical": null
                 }
               ]
             }
-            Return ONLY raw JSON, with no markdown formatting.
+            Return ONLY raw JSON, do not wrap it in ```json or any markdown formatting.
         """.trimIndent()
 
         val request = GenerateContentRequest(
@@ -66,6 +76,7 @@ object ScannerUtil {
         try {
             val response = RetrofitClient.service.generateContent(apiKey, request)
             val text = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: return@withContext null
+            Log.d("ScannerUtil", "Raw API Response: ${text}")
             
             // Clean up text if it has markdown
             val cleanedText = text.replace("```json", "").replace("```", "").trim()
@@ -75,7 +86,7 @@ object ScannerUtil {
             val scanResponse = adapter.fromJson(cleanedText)
             scanResponse?.results
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("ScannerUtil", "Error scanning marksheet: ${e.message}", e)
             null
         }
     }
