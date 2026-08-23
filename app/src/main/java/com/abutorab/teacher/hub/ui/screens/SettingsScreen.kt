@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,9 +40,9 @@ fun SettingsScreen(
     val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
     
     val uriHandler = LocalUriHandler.current
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var showProfileDialog by remember { mutableStateOf(false) }
-    var showSignInDialog by remember { mutableStateOf(false) }
     var showResetSubjectsDialog by remember { mutableStateOf(false) }
 
     val animatedSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.surfaceVariant, animationSpec = tween(300))
@@ -121,7 +122,7 @@ fun SettingsScreen(
                             Text("Edit Profile")
                         }
                         TextButton(
-                            onClick = { viewModel.signOut() },
+                            onClick = { viewModel.signOut(context) },
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -130,12 +131,13 @@ fun SettingsScreen(
                         }
                     }
                 } else {
+                    
                     Button(
-                        onClick = { showSignInDialog = true },
+                        onClick = { viewModel.signInWithGoogle(context) },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Icon(Icons.Default.Login, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Sign In with Google")
                     }
@@ -348,7 +350,7 @@ fun SettingsScreen(
                         color = animatedOnSurfaceVariant
                     )
                     Spacer(Modifier.height(4.dp))
-                    val context = androidx.compose.ui.platform.LocalContext.current
+                    
                     TextButton(
                         onClick = {
                             try {
@@ -370,59 +372,6 @@ fun SettingsScreen(
     }
 
     // Google Sign-in Dialog
-    if (showSignInDialog) {
-        var emailInput by remember { mutableStateOf("teacher@abutorab.edu.bd") }
-        var nameInput by remember { mutableStateOf("Senior Teacher") }
-        var schoolInput by remember { mutableStateOf("Abu Torab High School") }
-
-        AlertDialog(
-            onDismissRequest = { showSignInDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Google Sign-In")
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Sign in to your institutional Google Account:", style = MaterialTheme.typography.bodySmall)
-                    OutlinedTextField(
-                        value = emailInput,
-                        onValueChange = { emailInput = it },
-                        label = { Text("Google Email") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { nameInput = it },
-                        label = { Text("Teacher Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = schoolInput,
-                        onValueChange = { schoolInput = it },
-                        label = { Text("School Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    viewModel.signInWithGoogle(emailInput.trim(), nameInput.trim())
-                    viewModel.updateTeacherProfile(nameInput.trim(), schoolInput.trim())
-                    showSignInDialog = false
-                }) {
-                    Text("Sign In")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSignInDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 
     // Edit Profile Dialog
     if (showProfileDialog) {

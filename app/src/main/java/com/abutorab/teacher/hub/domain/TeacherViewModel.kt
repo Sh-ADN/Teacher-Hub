@@ -66,20 +66,31 @@ class TeacherViewModel(
     private val _userEmail = MutableStateFlow(userPrefs.getString("user_email", authManager.getCurrentUser()?.email ?: "teacher@abutorab.edu.bd") ?: "teacher@abutorab.edu.bd")
     val userEmail: StateFlow<String> = _userEmail.asStateFlow()
 
-    fun signInWithGoogle(email: String = "teacher@abutorab.edu.bd", name: String = "Senior Teacher") {
-        userPrefs.edit()
-            .putBoolean("is_logged_in", true)
-            .putString("user_email", email)
-            .putString("teacher_name", name)
-            .apply()
-        _isLoggedIn.value = true
-        _userEmail.value = email
-        _teacherName.value = name
+    fun signInWithGoogle(context: Context) {
+        viewModelScope.launch {
+            val result = authManager.signInWithGoogle(context)
+            result.onSuccess { user ->
+                val email = user.email ?: ""
+                val name = user.displayName ?: "Senior Teacher"
+                userPrefs.edit()
+                    .putBoolean("is_logged_in", true)
+                    .putString("user_email", email)
+                    .putString("teacher_name", name)
+                    .apply()
+                _isLoggedIn.value = true
+                _userEmail.value = email
+                _teacherName.value = name
+            }.onFailure { e ->
+                android.widget.Toast.makeText(context, "Sign-in failed: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     fun signOut(context: Context? = null) {
         if (context != null) {
-            authManager.signOut(context)
+            viewModelScope.launch {
+                authManager.signOut(context)
+            }
         }
         userPrefs.edit().putBoolean("is_logged_in", false).apply()
         _isLoggedIn.value = false
