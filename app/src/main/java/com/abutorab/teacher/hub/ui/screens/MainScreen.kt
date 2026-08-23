@@ -372,37 +372,29 @@ fun MainScreen(viewModel: TeacherViewModel) {
                 )
             },
             bottomBar = {
-                NavigationBar(containerColor = animatedSurfaceVariant) {
-                    NavigationBarItem(
-                        selected = currentScreen == AppScreen.QUICK_EDIT,
-                        onClick = { currentScreen = AppScreen.QUICK_EDIT },
-                        icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
-                        label = { Text("Quick Edit") }
-                    )
-                    NavigationBarItem(
-                        selected = currentScreen == AppScreen.MARKSHEET,
-                        onClick = { currentScreen = AppScreen.MARKSHEET },
-                        icon = { Icon(Icons.Default.Person, contentDescription = "Marksheet") },
-                        label = { Text("Marksheet") }
-                    )
-                    NavigationBarItem(
-                        selected = currentScreen == AppScreen.TABULATION,
-                        onClick = { currentScreen = AppScreen.TABULATION },
-                        icon = { Icon(Icons.Default.List, contentDescription = "Tabulation") },
-                        label = { Text("Tabulation") }
-                    )
-                    NavigationBarItem(
-                        selected = currentScreen == AppScreen.DASHBOARD,
-                        onClick = { currentScreen = AppScreen.DASHBOARD },
-                        icon = { Icon(Icons.Default.Analytics, contentDescription = "Dashboard") },
-                        label = { Text("Dashboard") }
-                    )
-                    NavigationBarItem(
-                        selected = currentScreen == AppScreen.SETTINGS,
-                        onClick = { currentScreen = AppScreen.SETTINGS },
-                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                        label = { Text("Settings") }
-                    )
+                if (currentScreen in listOf(AppScreen.QUICK_EDIT, AppScreen.TABULATION, AppScreen.MARKSHEET)) {
+                    NavigationBar(containerColor = animatedSurfaceVariant) {
+                        if (selectedTerm != "SOMONNITO") {
+                            NavigationBarItem(
+                                selected = currentScreen == AppScreen.QUICK_EDIT,
+                                onClick = { currentScreen = AppScreen.QUICK_EDIT },
+                                icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
+                                label = { Text("Quick Edit") }
+                            )
+                        }
+                        NavigationBarItem(
+                            selected = currentScreen == AppScreen.TABULATION,
+                            onClick = { currentScreen = AppScreen.TABULATION },
+                            icon = { Icon(Icons.Default.List, contentDescription = "Tabulation") },
+                            label = { Text("Tabulation") }
+                        )
+                        NavigationBarItem(
+                            selected = currentScreen == AppScreen.MARKSHEET,
+                            onClick = { currentScreen = AppScreen.MARKSHEET },
+                            icon = { Icon(Icons.Default.Person, contentDescription = "Marksheet") },
+                            label = { Text("Marksheet") }
+                        )
+                    }
                 }
             }
         ) { innerPadding ->
