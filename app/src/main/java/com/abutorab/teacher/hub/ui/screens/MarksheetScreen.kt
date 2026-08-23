@@ -38,13 +38,13 @@ fun MarksheetScreen(viewModel: TeacherViewModel) {
     val allSubjectsRaw by viewModel.allSubjects.collectAsStateWithLifecycle()
     val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
-    
+
     var localQuery by remember(searchQuery) { mutableStateOf(searchQuery) }
-    
+
     val allSubjects = remember(allSubjectsRaw) {
         allSubjectsRaw.toList()
     }
-    
+
     val termText = when(selectedTerm) {
         "ARDHOBARSHIK" -> "অর্ধবার্ষিক"
         "BARSHIK" -> "বার্ষিক"
@@ -184,7 +184,7 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>, termText
                 }
             }
         }
-        
+
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp, vertical = 8.dp)
@@ -200,19 +200,19 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>, termText
                     LedgerHeaderCell("গ্রেড", Modifier.width(44.dp))
                 }
                 HorizontalDivider()
-                
+
                 // Scrollable Subject Rows
                 Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                     val categories = SubjectCategory.values()
-                    
+
                     categories.forEachIndexed { index, category ->
                         val matchedSubject = findSubjectForCategory(category, allSubjects)
                         val sr = if (matchedSubject != null) row.results[matchedSubject.id] else null
-                        
+
                         val displayName = category.defaultName
-                        
+
                         val isFailed = sr?.grade?.point == 0.0 && sr.total > 0
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -242,7 +242,7 @@ fun MarksheetCard(row: TabulationRow, allSubjects: List<SubjectEntity>, termText
                         }
                         if (index < categories.lastIndex) HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                     }
-                    
+
                     HorizontalDivider(thickness = 2.dp)
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),

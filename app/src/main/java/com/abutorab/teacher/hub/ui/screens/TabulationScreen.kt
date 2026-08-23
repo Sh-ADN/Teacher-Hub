@@ -48,7 +48,7 @@ fun TabulationScreen(viewModel: TeacherViewModel, onNavigateToMarksheet: (Int) -
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
-        
+
         if (tabulationData.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("No data available.")
@@ -106,7 +106,7 @@ fun TabulationScreen(viewModel: TeacherViewModel, onNavigateToMarksheet: (Int) -
                                 if (subj.hasWritten) textParts.add(sr?.written?.toString() ?: "-")
                                 if (subj.hasPractical) textParts.add(sr?.practical?.toString() ?: "-")
                                 val text = textParts.joinToString("+") + if (textParts.size > 1) "=${sr?.total ?: "-"}" else ""
-                                
+
                                 val isFail = sr?.grade?.point == 0.0 && sr.total > 0
                                 val cellColor = if (isFail) FailRed else MaterialTheme.colorScheme.onSurface
                                 DataCell(text, width, color = cellColor)

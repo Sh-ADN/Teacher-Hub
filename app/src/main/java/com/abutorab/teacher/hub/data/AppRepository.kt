@@ -14,7 +14,7 @@ class AppRepository(private val dao: AppDao) {
     fun getMarksForSubject(subjectId: String, year: Int, term: String): Flow<List<MarkEntity>> {
         return dao.getMarksForSubject(subjectId, year, term)
     }
-    
+
     fun getAllMarks(year: Int, term: String): Flow<List<MarkEntity>> {
         return dao.getAllMarks(year, term)
     }
@@ -29,7 +29,7 @@ class AppRepository(private val dao: AppDao) {
         val existingSubjects = dao.getAllSubjectsOnce()
         val existingIds = existingSubjects.map { it.id }.toSet()
         val newSubjects = mutableListOf<SubjectEntity>()
-        
+
         com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.forEach { predefined ->
             if (predefined.id !in existingIds) {
                 newSubjects.add(
@@ -48,7 +48,7 @@ class AppRepository(private val dao: AppDao) {
                 )
             }
         }
-        
+
         if (newSubjects.isNotEmpty()) {
             dao.insertSubjects(newSubjects)
         }
@@ -81,20 +81,16 @@ class AppRepository(private val dao: AppDao) {
     suspend fun insertMark(mark: MarkEntity) {
         dao.insertMark(mark)
     }
-    
+
     suspend fun insertMarks(marks: List<MarkEntity>) {
         dao.insertMarks(marks)
     }
 
     suspend fun updateMark(mark: MarkEntity) {
-        // AppDao does not have updateMark? Wait, let's check AppDao.
-        // It has insertMark which uses REPLACE.
         dao.insertMark(mark)
     }
-    
+
     suspend fun deleteMarks(marks: List<MarkEntity>) {
-        // dao doesn't have deleteMarks(List), but it's okay, not used?
-        // Wait, what methods are used? Let's fix errors.
     }
 
     suspend fun insertStudents(students: List<StudentEntity>) {
@@ -129,6 +125,7 @@ class AppRepository(private val dao: AppDao) {
         if (students.isNotEmpty()) dao.insertStudentsReplace(students)
         if (marks.isNotEmpty()) dao.insertMarks(marks)
     }
+
     suspend fun deleteSubjectAndTransferMarks(subject: SubjectEntity, newSubjectId: String?) {
         if (newSubjectId != null) {
             val marks = dao.getAllMarksForSubject(subject.id)

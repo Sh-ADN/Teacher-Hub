@@ -26,7 +26,7 @@ class SyncManager(private val repository: AppRepository) {
 
     suspend fun pushAllToCloud(uid: String) {
         val userDocRef = firestore.collection("users").document(uid)
-        
+
         val students = repository.allStudentsGlobal.first()
         val subjects = repository.allSubjects.first()
         val marks = repository.allMarksGlobal.first()

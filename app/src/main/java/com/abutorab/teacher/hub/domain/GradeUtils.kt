@@ -4,7 +4,7 @@ data class Grade(val letter: String, val point: Double)
 
 fun calculateGrade(total: Int, outOf: Int = 100): Grade {
     val percentage = (total.toDouble() / outOf) * 100
-    
+
     return when {
         percentage >= 80 -> Grade("A+", 5.0)
         percentage >= 70 -> Grade("A", 4.0)

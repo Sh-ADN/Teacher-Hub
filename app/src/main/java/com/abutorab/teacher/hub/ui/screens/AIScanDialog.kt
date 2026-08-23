@@ -1,12 +1,10 @@
 package com.abutorab.teacher.hub.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,7 +46,7 @@ fun AIScanDialog(
                             Text("Written", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
                             Text("Prac", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
                         }
-                        Divider()
+                        HorizontalDivider()
                     }
                     items(results) { item ->
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
@@ -57,7 +55,7 @@ fun AIScanDialog(
                             Text(item.written?.toString() ?: "-", modifier = Modifier.weight(1f))
                             Text(item.practical?.toString() ?: "-", modifier = Modifier.weight(1f))
                         }
-                        Divider()
+                        HorizontalDivider()
                     }
                 }
                 

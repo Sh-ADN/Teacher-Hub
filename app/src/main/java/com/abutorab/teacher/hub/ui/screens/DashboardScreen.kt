@@ -38,7 +38,7 @@ fun DashboardScreen(viewModel: TeacherViewModel, onNavigateToMeritList: () -> Un
     val totalPassed = evaluatedStudents.count { it.failedSubjectCount == 0 }
     val totalFailed = evaluatedStudents.count { it.failedSubjectCount > 0 }
     val passPercentage = if (evaluatedStudents.isNotEmpty()) (totalPassed.toFloat() / evaluatedStudents.size) * 100 else 0f
-    
+
     val averageTotal = if (evaluatedStudents.isNotEmpty()) evaluatedStudents.map { it.totalMarks }.average() else 0.0
     val sortedTotals = evaluatedStudents.map { it.totalMarks }.sorted()
     val medianTotal = if (sortedTotals.isNotEmpty()) {
@@ -82,7 +82,7 @@ fun DashboardScreen(viewModel: TeacherViewModel, onNavigateToMeritList: () -> Un
             }
             return@Scaffold
         }
-        
+
         LazyColumn(
             modifier = Modifier.padding(paddingValues).fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
@@ -120,7 +120,7 @@ fun DashboardScreen(viewModel: TeacherViewModel, onNavigateToMeritList: () -> Un
                     )
                 }
             }
-            
+
             item {
                 Text("Performance Distribution", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }

@@ -1,150 +1,323 @@
 package com.abutorab.teacher.hub.ui.screens
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Nightlight
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PersonSearch
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.material.icons.filled.Dashboard
+import com.abutorab.teacher.hub.R
 import com.abutorab.teacher.hub.domain.TeacherViewModel
 import kotlinx.coroutines.launch
 
+enum class AppScreen(val title: String) {
+    DASHBOARD("Dashboard"),
+    QUICK_EDIT("Quick Mark Entry"),
+    STUDENTS("Students Roster"),
+    SUBJECTS("Subjects & Curriculum"),
+    TABULATION("Tabulation Sheet"),
+    MARKSHEET("Individual Marksheet"),
+    MERIT_LIST("Merit Ranking List"),
+    VERIFICATION_SHEET("Verification Sheet (নম্বর ফর্দ)"),
+    YEAR_PICKER("Academic Year"),
+    TERM_PICKER("Academic Term"),
+    SETTINGS("Settings & Setup")
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
-    val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+fun MainScreen(viewModel: TeacherViewModel) {
+    var currentScreen by remember { mutableStateOf(AppScreen.QUICK_EDIT) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     val selectedYear by viewModel.selectedYear.collectAsStateWithLifecycle()
     val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
+    val teacherName by viewModel.teacherName.collectAsStateWithLifecycle()
+    val schoolName by viewModel.schoolName.collectAsStateWithLifecycle()
+    val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-    var showVerificationSheet by remember { mutableStateOf(false) }
-
-    val themeState by viewModel.themeState.collectAsStateWithLifecycle()
-    val isSystemDark = isSystemInDarkTheme()
-    val isDarkTheme = when (themeState) {
-        "light" -> false
-        "dark" -> true
-        else -> isSystemDark
+    val termDisplay = when (selectedTerm) {
+        "ARDHOBARSHIK" -> "অর্ধবার্ষিক"
+        "BARSHIK" -> "বার্ষিক"
+        "SOMONNITO" -> "সমন্বিত"
+        else -> selectedTerm
     }
 
-    LaunchedEffect(selectedTerm, currentRoute) {
-        if (selectedTerm == "SOMONNITO" && currentRoute == "quick_edit") {
-            navController.navigate("tabulation") {
-                popUpTo("quick_edit") { inclusive = true }
-                launchSingleTop = true
-            }
-        }
-    }
+    val animatedSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.surfaceVariant, animationSpec = tween(300))
+    val animatedOnSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurfaceVariant, animationSpec = tween(300))
+    val animatedPrimary by animateColorAsState(targetValue = MaterialTheme.colorScheme.primary, animationSpec = tween(300))
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
-                Spacer(modifier = Modifier.height(16.dp))
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Edit, contentDescription = "Change Year/Term") },
-                    label = { Text("বছর/টার্ম পরিবর্তন করুন") },
-                    selected = false,
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        onChangeYearTerm()
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.People, contentDescription = "Students") },
-                    label = { Text("Students") },
-                    selected = currentRoute == "students",
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("students") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+            ModalDrawerSheet(
+                modifier = Modifier.width(320.dp),
+                drawerContainerColor = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    // Header with School Logo, School Name, and Teacher Profile
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .padding(20.dp)
+                    ) {
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.school_logo),
+                                    contentDescription = "School Logo",
+                                    modifier = Modifier
+                                        .size(52.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(4.dp)
+                                )
+                                Column {
+                                    Text(
+                                        text = schoolName,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                    Text(
+                                        text = "Teacher Hub • Academic Suite",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(14.dp))
+
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            if (isLoggedIn) Icons.Default.CheckCircle else Icons.Default.AccountCircle,
+                                            contentDescription = null,
+                                            tint = if (isLoggedIn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Column {
+                                            Text(
+                                                text = if (isLoggedIn) teacherName else "Google Account",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                text = if (isLoggedIn) userEmail else "Not signed in",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Book, contentDescription = "Subjects") },
-                    label = { Text("Subjects") },
-                    selected = currentRoute == "subjects",
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("subjects") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                    label = { Text("Dashboard") },
-                    selected = currentRoute == "dashboard",
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("dashboard") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
-                
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                    label = { Text("Settings") },
-                    selected = currentRoute == "settings",
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("settings") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Section 1: Overview
+                    Text(
+                        "MAIN OVERVIEW",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
+                        label = { Text("Dashboard & Analytics") },
+                        selected = currentScreen == AppScreen.DASHBOARD,
+                        onClick = {
+                            currentScreen = AppScreen.DASHBOARD
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+
+                    // Section 2: Mark Management
+                    Text(
+                        "MARKS & ACADEMIC RECORDS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                        label = { Text("Quick Mark Entry") },
+                        selected = currentScreen == AppScreen.QUICK_EDIT,
+                        onClick = {
+                            currentScreen = AppScreen.QUICK_EDIT
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.People, contentDescription = null) },
+                        label = { Text("Students Roster") },
+                        selected = currentScreen == AppScreen.STUDENTS,
+                        onClick = {
+                            currentScreen = AppScreen.STUDENTS
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.School, contentDescription = null) },
+                        label = { Text("Subjects & Curriculum") },
+                        selected = currentScreen == AppScreen.SUBJECTS,
+                        onClick = {
+                            currentScreen = AppScreen.SUBJECTS
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.FormatListNumbered, contentDescription = null) },
+                        label = { Text("Tabulation Sheet") },
+                        selected = currentScreen == AppScreen.TABULATION,
+                        onClick = {
+                            currentScreen = AppScreen.TABULATION
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Badge, contentDescription = null) },
+                        label = { Text("Individual Marksheet") },
+                        selected = currentScreen == AppScreen.MARKSHEET,
+                        onClick = {
+                            currentScreen = AppScreen.MARKSHEET
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.EmojiEvents, contentDescription = null) },
+                        label = { Text("Merit Ranking List") },
+                        selected = currentScreen == AppScreen.MERIT_LIST,
+                        onClick = {
+                            currentScreen = AppScreen.MERIT_LIST
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.FactCheck, contentDescription = null) },
+                        label = { Text("Verification Sheet (নম্বর ফর্দ)") },
+                        selected = currentScreen == AppScreen.VERIFICATION_SHEET,
+                        onClick = {
+                            currentScreen = AppScreen.VERIFICATION_SHEET
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+
+                    // Section 3: Session
+                    Text(
+                        "ACADEMIC SESSION",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
+                        label = { Text("Academic Year ($selectedYear)") },
+                        selected = currentScreen == AppScreen.YEAR_PICKER,
+                        onClick = {
+                            currentScreen = AppScreen.YEAR_PICKER
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.EventNote, contentDescription = null) },
+                        label = { Text("Academic Term ($termDisplay)") },
+                        selected = currentScreen == AppScreen.TERM_PICKER,
+                        onClick = {
+                            currentScreen = AppScreen.TERM_PICKER
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+
+                    // Section 4: System & Setup
+                    Text(
+                        "SYSTEM",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+                        label = { Text("Settings & Setup") },
+                        selected = currentScreen == AppScreen.SETTINGS,
+                        onClick = {
+                            currentScreen = AppScreen.SETTINGS
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+                }
             }
         }
     ) {
@@ -154,183 +327,142 @@ fun MainScreen(viewModel: TeacherViewModel, onChangeYearTerm: () -> Unit) {
                     title = {
                         Column {
                             Text(
-                                text = when (currentRoute) {
-                                    "students" -> "Students"
-                                    "subjects" -> "Subjects"
-                                    "tabulation" -> "Tabulation"
-                                    "marksheet" -> "Marksheet"
-                                    "quick_edit" -> "Quick Edit"
-                                    "settings" -> "Settings"
-                                    "dashboard" -> "Dashboard"
-                                    "merit_list" -> "Merit List"
-                                    else -> "Teacher Hub"
-                                }
+                                text = currentScreen.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
-                            val termText = when(selectedTerm) {
-                                "ARDHOBARSHIK" -> "অর্ধবার্ষিক"
-                                "BARSHIK" -> "বার্ষিক"
-                                "SOMONNITO" -> "সমন্বিত"
-                                else -> ""
-                            }
-                            if (termText.isNotEmpty()) {
-                                Text(
-                                    text = "${selectedYear.toBengaliNumerals()} • $termText",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            Text(
+                                text = "$selectedYear • $termDisplay",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Open Navigation Drawer")
+                            Icon(Icons.Default.Menu, contentDescription = "Open Hamburger Menu")
                         }
                     },
                     actions = {
-                        if (currentRoute == "quick_edit") {
-                            IconButton(onClick = { showVerificationSheet = true }) {
-                                Icon(Icons.Default.Visibility, contentDescription = "Verification Sheet")
+                        // Quick Theme Toggle
+                        IconButton(onClick = {
+                            val nextMode = when (themeMode) {
+                                "dark" -> "light"
+                                "light" -> "dark"
+                                else -> "dark"
                             }
+                            viewModel.setThemeMode(nextMode)
+                        }) {
+                            Icon(
+                                if (themeMode == "dark") Icons.Default.DarkMode else Icons.Default.LightMode,
+                                contentDescription = "Toggle Light/Dark Theme"
+                            )
                         }
-                        if (currentRoute == "marksheet") {
-                            val marksheet by viewModel.searchedMarksheet.collectAsStateWithLifecycle()
-                            if (marksheet != null) {
-                                IconButton(onClick = { viewModel.onMarksheetSearchChanged("") }) {
-                                    Icon(Icons.Default.Search, contentDescription = "Search another")
-                                }
-                            }
-                        }
-                        ThemeToggleButton(
-                            isDarkTheme = isDarkTheme,
-                            onThemeToggle = { viewModel.toggleTheme(isDarkTheme) }
+
+                        // Quick Term Selector Chip
+                        AssistChip(
+                            onClick = { currentScreen = AppScreen.TERM_PICKER },
+                            label = { Text(termDisplay, fontSize = 11.sp) },
+                            modifier = Modifier.padding(end = 8.dp)
                         )
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
             },
             bottomBar = {
-                if (currentRoute in listOf("quick_edit", "tabulation", "marksheet")) {
-                    NavigationBar {
-                        if (selectedTerm != "SOMONNITO") {
-                            NavigationBarItem(
-                                icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
-                                label = { Text("Quick Edit") },
-                                selected = currentRoute == "quick_edit",
-                                onClick = {
-                                    navController.navigate("quick_edit") {
-                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            )
-                        }
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.List, contentDescription = "Tabulation") },
-                            label = { Text("Tabulation") },
-                            selected = currentRoute == "tabulation",
-                            onClick = {
-                                navController.navigate("tabulation") {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Default.PersonSearch, contentDescription = "Marksheet") },
-                            label = { Text("Marksheet") },
-                            selected = currentRoute == "marksheet",
-                            onClick = {
-                                navController.navigate("marksheet") {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                    }
+                NavigationBar(containerColor = animatedSurfaceVariant) {
+                    NavigationBarItem(
+                        selected = currentScreen == AppScreen.QUICK_EDIT,
+                        onClick = { currentScreen = AppScreen.QUICK_EDIT },
+                        icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
+                        label = { Text("Quick Edit") }
+                    )
+                    NavigationBarItem(
+                        selected = currentScreen == AppScreen.MARKSHEET,
+                        onClick = { currentScreen = AppScreen.MARKSHEET },
+                        icon = { Icon(Icons.Default.Person, contentDescription = "Marksheet") },
+                        label = { Text("Marksheet") }
+                    )
+                    NavigationBarItem(
+                        selected = currentScreen == AppScreen.TABULATION,
+                        onClick = { currentScreen = AppScreen.TABULATION },
+                        icon = { Icon(Icons.Default.List, contentDescription = "Tabulation") },
+                        label = { Text("Tabulation") }
+                    )
+                    NavigationBarItem(
+                        selected = currentScreen == AppScreen.DASHBOARD,
+                        onClick = { currentScreen = AppScreen.DASHBOARD },
+                        icon = { Icon(Icons.Default.Analytics, contentDescription = "Dashboard") },
+                        label = { Text("Dashboard") }
+                    )
+                    NavigationBarItem(
+                        selected = currentScreen == AppScreen.SETTINGS,
+                        onClick = { currentScreen = AppScreen.SETTINGS },
+                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                        label = { Text("Settings") }
+                    )
                 }
             }
         ) { innerPadding ->
-            if (showVerificationSheet) {
-                val subject by viewModel.selectedSubject.collectAsStateWithLifecycle()
-                val data by viewModel.activeQuickEditData.collectAsStateWithLifecycle()
-                
-                if (subject != null) {
-                    VerificationSheetDialog(
-                        year = selectedYear,
-                        term = selectedTerm,
-                        subject = subject!!,
-                        students = data.map { it.student },
-                        marks = data.mapNotNull { it.mark },
-                        onDismiss = { showVerificationSheet = false }
-                    )
-                }
-            }
-
-            NavHost(
-                navController = navController,
-                startDestination = "quick_edit",
-                modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding).fillMaxSize()
-            ) {
-                composable("students") { StudentsScreen(viewModel) }
-                composable("subjects") { SubjectsScreen(viewModel) }
-                composable("quick_edit") { QuickEditScreen(viewModel) }
-                composable("dashboard") { 
-                    DashboardScreen(viewModel) {
-                        navController.navigate("merit_list")
-                    } 
-                }
-                composable("merit_list") {
-                    MeritListScreen(viewModel) {
-                        navController.popBackStack()
-                    }
-                }
-                composable("tabulation") {
-                    TabulationScreen(
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                when (currentScreen) {
+                    AppScreen.DASHBOARD -> DashboardScreen(
                         viewModel = viewModel,
-                        onNavigateToMarksheet = { roll ->
-                            viewModel.onMarksheetSearchChanged(roll.toString())
-                            navController.navigate("marksheet")
+                        onNavigateToMeritList = { currentScreen = AppScreen.MERIT_LIST }
+                    )
+                    AppScreen.QUICK_EDIT -> QuickEditScreen(viewModel = viewModel)
+                    AppScreen.STUDENTS -> StudentsScreen(viewModel = viewModel)
+                    AppScreen.SUBJECTS -> SubjectsScreen(viewModel = viewModel)
+                    AppScreen.TABULATION -> TabulationScreen(viewModel = viewModel)
+                    AppScreen.MARKSHEET -> MarksheetScreen(viewModel = viewModel)
+                    AppScreen.MERIT_LIST -> MeritListScreen(
+                        viewModel = viewModel,
+                        onBack = { currentScreen = AppScreen.DASHBOARD }
+                    )
+                    AppScreen.VERIFICATION_SHEET -> {
+                        val subjects by viewModel.allSubjects.collectAsStateWithLifecycle()
+                        val selectedSubject by viewModel.selectedSubject.collectAsStateWithLifecycle()
+                        val allStudents by viewModel.allStudents.collectAsStateWithLifecycle()
+                        val allMarks by viewModel.allMarks.collectAsStateWithLifecycle()
+                        val selectedYearInt by viewModel.selectedYearInt.collectAsStateWithLifecycle()
+                        val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
+
+                        val currentSubj = selectedSubject ?: subjects.firstOrNull()
+                        if (currentSubj != null) {
+                            VerificationSheetDialog(
+                                year = selectedYearInt,
+                                term = selectedTerm,
+                                subject = currentSubj,
+                                students = allStudents,
+                                marks = allMarks.filter { it.subjectId == currentSubj.id },
+                                onDismiss = { currentScreen = AppScreen.QUICK_EDIT }
+                            )
+                        } else {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("Please create or select a subject first.")
+                            }
+                        }
+                    }
+                    AppScreen.YEAR_PICKER -> YearPickerScreen(
+                        onYearSelected = { year ->
+                            viewModel.selectYear(year.toString())
+                            currentScreen = AppScreen.QUICK_EDIT
                         }
                     )
-                }
-                composable("marksheet") { MarksheetScreen(viewModel) }
-                composable("settings") { SettingsScreen(viewModel) }
-            }
-        }
-    }
-}
-
-@Composable
-fun ThemeToggleButton(
-    isDarkTheme: Boolean,
-    onThemeToggle: () -> Unit
-) {
-    val rotation by animateFloatAsState(
-        targetValue = if (isDarkTheme) 360f else 0f,
-        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
-        label = "ThemeToggleRotation"
-    )
-
-    IconButton(onClick = onThemeToggle) {
-        Box(modifier = Modifier.graphicsLayer(rotationZ = rotation)) {
-            Crossfade(
-                targetState = isDarkTheme,
-                animationSpec = tween(durationMillis = 500),
-                label = "ThemeToggleCrossfade"
-            ) { dark ->
-                if (dark) {
-                    Icon(
-                        imageVector = Icons.Filled.WbSunny,
-                        contentDescription = "Switch to light theme",
-                        tint = Color(0xFFFFC107)
+                    AppScreen.TERM_PICKER -> TermPickerScreen(
+                        selectedYear = selectedYear.toIntOrNull() ?: 2026,
+                        onTermSelected = { term ->
+                            viewModel.selectTerm(term)
+                            currentScreen = AppScreen.QUICK_EDIT
+                        },
+                        onBack = { currentScreen = AppScreen.QUICK_EDIT }
                     )
-                } else {
-                    Icon(
-                        imageVector = Icons.Filled.Nightlight,
-                        contentDescription = "Switch to dark theme",
-                        tint = Color(0xFF2C3E50)
+                    AppScreen.SETTINGS -> SettingsScreen(
+                        viewModel = viewModel,
+                        onNavigateToYearPicker = { currentScreen = AppScreen.YEAR_PICKER },
+                        onNavigateToTermPicker = { currentScreen = AppScreen.TERM_PICKER }
                     )
                 }
             }

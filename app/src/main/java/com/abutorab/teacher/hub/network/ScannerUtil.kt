@@ -3,7 +3,6 @@ package com.abutorab.teacher.hub.network
 import android.graphics.Bitmap
 import android.util.Base64
 import android.util.Log
-import com.abutorab.teacher.hub.BuildConfig
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -31,8 +30,7 @@ object ScannerUtil {
         return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
     }
 
-    suspend fun scanMarksheet(bitmap: Bitmap): List<ScanResultItem>? = withContext(Dispatchers.IO) {
-        val apiKey = BuildConfig.GEMINI_API_KEY
+    suspend fun scanMarksheet(bitmap: Bitmap, apiKey: String): List<ScanResultItem>? = withContext(Dispatchers.IO) {
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
             Log.e("ScannerUtil", "API Key is missing!")
             return@withContext emptyList()
@@ -78,7 +76,6 @@ object ScannerUtil {
             val text = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: return@withContext null
             Log.d("ScannerUtil", "Raw API Response: ${text}")
             
-            // Clean up text if it has markdown
             val cleanedText = text.replace("```json", "").replace("```", "").trim()
             
             val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()

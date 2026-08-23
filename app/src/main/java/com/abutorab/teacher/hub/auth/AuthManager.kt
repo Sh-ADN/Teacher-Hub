@@ -45,7 +45,7 @@ class AuthManager {
     fun signOut(context: Context) {
         // Sign out of Firebase
         auth.signOut()
-        
+
         // Sign out of Google
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getWebClientId(context))

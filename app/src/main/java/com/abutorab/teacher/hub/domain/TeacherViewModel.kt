@@ -4,87 +4,139 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.abutorab.teacher.hub.auth.AuthManager
 import com.abutorab.teacher.hub.data.AppRepository
+import com.abutorab.teacher.hub.data.CalculationUtils
 import com.abutorab.teacher.hub.data.MarkEntity
 import com.abutorab.teacher.hub.data.StudentEntity
 import com.abutorab.teacher.hub.data.SubjectEntity
+import com.abutorab.teacher.hub.data.TeacherDatabase
+import com.abutorab.teacher.hub.sync.SyncManager
+import com.abutorab.teacher.hub.util.ThemePreference
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlin.math.round
-
-// ... (SubjectResult and other data classes remain) ...
-
-data class SubjectResult(
-    val subject: SubjectEntity,
-    val mcq: Int?,
-    val written: Int?,
-    val practical: Int?
-) {
-    val total get() = (mcq ?: 0) + (written ?: 0) + (practical ?: 0)
-    val grade get() = calculateGrade(total, subject.maxMarks)
-}
-
-data class TabulationRow(
-    val student: StudentEntity,
-    val results: Map<String, SubjectResult>, // Key is SubjectEntity.id
-    val totalMarks: Int,
-    val finalGpa: Double,
-    val finalGrade: String,
-    val failedSubjectCount: Int = 0,
-    val meritPosition: Int = 0 // Computed later
-)
-
-data class StudentWithMark(
-    val student: StudentEntity,
-    val mark: MarkEntity?
-)
 
 class TeacherViewModel(
     application: Application,
     private val repository: AppRepository
 ) : AndroidViewModel(application) {
 
+    constructor(application: Application) : this(
+        application,
+        AppRepository(TeacherDatabase.getDatabase(application).teacherDao())
+    )
+
     private val sharedPrefs = application.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-    
+    private val userPrefs = application.getSharedPreferences("teacher_hub_prefs", Context.MODE_PRIVATE)
+    val authManager = AuthManager()
+
     private val _ardhoPercent = MutableStateFlow(sharedPrefs.getInt("somonnito_ardho_percent", 50))
-    
+    val ardhoPercent = _ardhoPercent.asStateFlow()
+
     fun notifySettingsChanged() {
         _ardhoPercent.value = sharedPrefs.getInt("somonnito_ardho_percent", 50)
     }
 
-    val syncManager = com.abutorab.teacher.hub.sync.SyncManager(repository)
+    val syncManager = SyncManager(repository)
 
-
-    private val themePreference = com.abutorab.teacher.hub.util.ThemePreference.getInstance(application)
+    private val themePreference = ThemePreference.getInstance(application)
     val themeState = themePreference.themeFlow
+    val themeMode: StateFlow<String> = themePreference.themeFlow
 
     fun toggleTheme(isCurrentlyDark: Boolean) {
         val newTheme = if (isCurrentlyDark) "light" else "dark"
         themePreference.setTheme(newTheme)
     }
 
+    fun setThemeMode(mode: String) {
+        themePreference.setTheme(mode)
+    }
+
+    // --- AUTH & PROFILE ---
+    private val _isLoggedIn = MutableStateFlow(userPrefs.getBoolean("is_logged_in", false) || authManager.getCurrentUser() != null)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    private val _teacherName = MutableStateFlow(userPrefs.getString("teacher_name", authManager.getCurrentUser()?.displayName ?: "Abu Torab High School Teacher") ?: "Abu Torab High School Teacher")
+    val teacherName: StateFlow<String> = _teacherName.asStateFlow()
+
+    private val _schoolName = MutableStateFlow(userPrefs.getString("school_name", "Abu Torab High School") ?: "Abu Torab High School")
+    val schoolName: StateFlow<String> = _schoolName.asStateFlow()
+
+    private val _userEmail = MutableStateFlow(userPrefs.getString("user_email", authManager.getCurrentUser()?.email ?: "teacher@abutorab.edu.bd") ?: "teacher@abutorab.edu.bd")
+    val userEmail: StateFlow<String> = _userEmail.asStateFlow()
+
+    fun signInWithGoogle(email: String = "teacher@abutorab.edu.bd", name: String = "Senior Teacher") {
+        userPrefs.edit()
+            .putBoolean("is_logged_in", true)
+            .putString("user_email", email)
+            .putString("teacher_name", name)
+            .apply()
+        _isLoggedIn.value = true
+        _userEmail.value = email
+        _teacherName.value = name
+    }
+
+    fun signOut(context: Context? = null) {
+        if (context != null) {
+            authManager.signOut(context)
+        }
+        userPrefs.edit().putBoolean("is_logged_in", false).apply()
+        _isLoggedIn.value = false
+    }
+
+    fun updateTeacherProfile(name: String, school: String) {
+        userPrefs.edit()
+            .putString("teacher_name", name)
+            .putString("school_name", school)
+            .apply()
+        _teacherName.value = name
+        _schoolName.value = school
+    }
+
+    private val _geminiApiKey = MutableStateFlow(userPrefs.getString("gemini_api_key", "") ?: "")
+    val geminiApiKey: StateFlow<String> = _geminiApiKey.asStateFlow()
+
+    fun saveGeminiApiKey(key: String) {
+        userPrefs.edit().putString("gemini_api_key", key).apply()
+        _geminiApiKey.value = key
+    }
+
     // --- GLOBAL SCOPE STATE ---
-    private val _selectedYear = MutableStateFlow(2026)
-    val selectedYear = _selectedYear.asStateFlow()
+    private val _selectedYearInt = MutableStateFlow(2026)
+    val selectedYear: StateFlow<String> = _selectedYearInt.map { it.toString() }.stateIn(viewModelScope, SharingStarted.Lazily, "2026")
+    val selectedYearInt: StateFlow<Int> = _selectedYearInt.asStateFlow()
 
     private val _selectedTerm = MutableStateFlow("ARDHOBARSHIK")
-    val selectedTerm = _selectedTerm.asStateFlow()
+    val selectedTerm: StateFlow<String> = _selectedTerm.asStateFlow()
+
+    fun selectYear(year: String) {
+        _selectedYearInt.value = year.toIntOrNull() ?: 2026
+    }
+
+    fun selectYear(year: Int) {
+        _selectedYearInt.value = year
+    }
+
+    fun selectTerm(term: String) {
+        _selectedTerm.value = term
+    }
 
     fun setYearAndTerm(year: Int, term: String) {
-        _selectedYear.value = year
+        _selectedYearInt.value = year
         _selectedTerm.value = term
     }
 
     // Global
     val allSubjects = repository.allSubjects.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val allStudents = _selectedYear.flatMapLatest { year ->
+    val allStudents = _selectedYearInt.flatMapLatest { year ->
         repository.getStudentsByYear(year)
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val allMarks = combine(_selectedYear, _selectedTerm, _ardhoPercent, ::Triple)
+    val allMarks = combine(_selectedYearInt, _selectedTerm, _ardhoPercent, ::Triple)
         .flatMapLatest { (year, term, ardhoPct) ->
             if (term == "SOMONNITO") {
                 combine(
@@ -96,7 +148,7 @@ class TeacherViewModel(
                     val combinedMarks = mutableListOf<MarkEntity>()
                     for (student in students) {
                         for (subj in subjectsList) {
-                            val computed = com.abutorab.teacher.hub.data.CalculationUtils.getSomonnitoMarks(
+                            val computed = CalculationUtils.getSomonnitoMarks(
                                 year = year,
                                 rollNumber = student.rollNumber,
                                 subjectId = subj.id,
@@ -126,25 +178,25 @@ class TeacherViewModel(
     // --- STUDENTS DIRECTORY ---
     private val _studentSearchQuery = MutableStateFlow("")
     val studentSearchQuery = _studentSearchQuery.asStateFlow()
-    
+
     val filteredStudents = combine(allStudents, _studentSearchQuery) { students, query ->
         if (query.isBlank()) {
             students
         } else {
             students.filter {
-                it.name.contains(query, ignoreCase = true) || 
+                it.name.contains(query, ignoreCase = true) ||
                 it.rollNumber.toString().contains(query)
             }
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    
+
     fun onStudentSearchChanged(query: String) {
         _studentSearchQuery.value = query
     }
 
     fun addStudent(rollNumber: Int, name: String) {
         viewModelScope.launch {
-            val student = StudentEntity(rollNumber = rollNumber, name = name, year = _selectedYear.value)
+            val student = StudentEntity(rollNumber = rollNumber, name = name, year = _selectedYearInt.value)
             repository.insertStudent(student)
         }
     }
@@ -153,7 +205,7 @@ class TeacherViewModel(
         viewModelScope.launch {
             val lines = csvData.lines()
             val studentsToImport = mutableListOf<StudentEntity>()
-            val currentYear = _selectedYear.value
+            val currentYear = _selectedYearInt.value
             for (line in lines) {
                 if (line.isBlank()) continue
                 val parts = line.split(",")
@@ -161,6 +213,8 @@ class TeacherViewModel(
                     val roll = parts[0].trim().toIntOrNull()
                     val name = parts[1].trim()
                     if (roll != null && name.isNotBlank()) {
+                        val section = if (parts.size >= 3) parts[2].trim() else "A"
+                        val shift = if (parts.size >= 4) parts[3].trim() else "Morning"
                         studentsToImport.add(StudentEntity(rollNumber = roll, name = name, year = currentYear))
                     }
                 }
@@ -183,9 +237,63 @@ class TeacherViewModel(
         }
     }
 
-    fun addSubject(id: String, title: String, maxMarks: Int, passMarks: Int, hasMcq: Boolean, maxMcq: Int, hasWritten: Boolean, maxWritten: Int, hasPractical: Boolean, maxPractical: Int) {
+    fun addSubject(
+        id: String,
+        title: String,
+        maxMarks: Int,
+        passMarks: Int,
+        hasMcq: Boolean,
+        maxMcq: Int,
+        hasWritten: Boolean,
+        maxWritten: Int,
+        hasPractical: Boolean,
+        maxPractical: Int
+    ) {
         viewModelScope.launch {
-            repository.insertSubject(SubjectEntity(id, title, maxMarks, passMarks, hasMcq, maxMcq, hasWritten, maxWritten, hasPractical, maxPractical))
+            repository.insertSubject(
+                SubjectEntity(
+                    id = id,
+                    title = title,
+                    maxMarks = maxMarks,
+                    passMarks = passMarks,
+                    hasMcq = hasMcq,
+                    maxMcq = maxMcq,
+                    hasWritten = hasWritten,
+                    maxWritten = maxWritten,
+                    hasPractical = hasPractical,
+                    maxPractical = maxPractical
+                )
+            )
+        }
+    }
+
+    fun addSubject(
+        title: String,
+        code: String,
+        maxMcq: Int,
+        maxWritten: Int,
+        maxPractical: Int
+    ) {
+        viewModelScope.launch {
+            val id = "sub_" + System.currentTimeMillis()
+            val hasMcq = maxMcq > 0
+            val hasWritten = maxWritten > 0
+            val hasPractical = maxPractical > 0
+            val maxMarks = (if (hasMcq) maxMcq else 0) + (if (hasWritten) maxWritten else 0) + (if (hasPractical) maxPractical else 0)
+            repository.insertSubject(
+                SubjectEntity(
+                    id = id,
+                    title = title,
+                    maxMarks = if (maxMarks > 0) maxMarks else 100,
+                    passMarks = 33,
+                    hasMcq = hasMcq,
+                    maxMcq = maxMcq,
+                    hasWritten = hasWritten,
+                    maxWritten = maxWritten,
+                    hasPractical = hasPractical,
+                    maxPractical = maxPractical
+                )
+            )
         }
     }
 
@@ -201,6 +309,18 @@ class TeacherViewModel(
         }
     }
 
+    fun resetAllSubjectsToDefault() {
+        viewModelScope.launch {
+            repository.ensurePredefinedSubjectsExist()
+        }
+    }
+
+    fun loadPredefinedSubjects() {
+        viewModelScope.launch {
+            repository.ensurePredefinedSubjectsExist()
+        }
+    }
+
     // --- QUICK EDIT STATE ---
     private val _selectedSubjectId = MutableStateFlow<String?>(null)
     val selectedSubjectId = _selectedSubjectId.asStateFlow()
@@ -210,7 +330,7 @@ class TeacherViewModel(
     }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val activeQuickEditData = combine(selectedSubject, _selectedYear, _selectedTerm, ::Triple)
+    val activeQuickEditData = combine(selectedSubject, _selectedYearInt, _selectedTerm, ::Triple)
         .flatMapLatest { (subject, year, term) ->
             if (subject == null) {
                 flowOf(emptyList())
@@ -231,24 +351,24 @@ class TeacherViewModel(
     fun saveMark(rollNumber: Int, mcq: Int?, written: Int?, practical: Int?) {
         val subjectId = selectedSubject.value?.id ?: return
         viewModelScope.launch {
-            repository.saveMark(rollNumber, subjectId, mcq, written, practical, _selectedYear.value, _selectedTerm.value)
+            repository.saveMark(rollNumber, subjectId, mcq, written, practical, _selectedYearInt.value, _selectedTerm.value)
         }
     }
 
     // --- TABULATION STATE ---
     val tabulationData = combine(allStudents, allMarks, allSubjects) { students, marks, subjects ->
         val marksByStudent = marks.groupBy { it.rollNumber }
-        
+
         val tabulationRows = students.map { student ->
             val studentMarks = marksByStudent[student.rollNumber] ?: emptyList()
             val rawResults = studentMarks.associateBy { it.subjectId }
-            
+
             // Build full results map ensuring every subject exists (even if missing/null)
             val results = subjects.associate { subj ->
                 val mark = rawResults[subj.id]
                 subj.id to SubjectResult(subj, mark?.mcq, mark?.written, mark?.practical)
             }
-            
+
             var totalMarks = 0
             var totalPoints = 0.0
             var failedSubjectCount = 0
@@ -264,18 +384,18 @@ class TeacherViewModel(
             fun processCombined(paper1: SubjectResult?, paper2: SubjectResult?) {
                 val p1Inputted = paper1?.let { it.mcq != null || it.written != null || it.practical != null } == true
                 val p2Inputted = paper2?.let { it.mcq != null || it.written != null || it.practical != null } == true
-                
+
                 if (paper1 != null && paper2 != null) {
                     if (p1Inputted || p2Inputted) {
                         val total = (if (p1Inputted) paper1.total else 0) + (if (p2Inputted) paper2.total else 0)
                         totalMarks += total
-                        
+
                         val combinedGrade = calculateGrade(total, paper1.subject.maxMarks + paper2.subject.maxMarks)
-                        
+
                         if (combinedGrade.point == 0.0) {
                             failedSubjectCount++
                         }
-                        
+
                         totalPoints += combinedGrade.point
                         normalSubjectCount++
                     }
@@ -300,7 +420,7 @@ class TeacherViewModel(
                     val isInputted = result.mcq != null || result.written != null || result.practical != null
                     if (isInputted) {
                         totalMarks += result.total
-                        
+
                         val grade = result.grade
                         if (grade.point == 0.0) {
                             failedSubjectCount++
@@ -314,13 +434,13 @@ class TeacherViewModel(
 
             var finalGpa = 0.0
             var finalGrade = if (normalSubjectCount == 0) "-" else "F"
-            
+
             val hasFail = failedSubjectCount > 0
 
             if (!hasFail && normalSubjectCount > 0) {
                 finalGpa = totalPoints / normalSubjectCount
                 if (finalGpa > 5.0) finalGpa = 5.0
-                
+
                 // Format up to 2 decimal places logically for the step comparison
                 val gpaRounded = (round(finalGpa * 100) / 100.0)
 
@@ -344,19 +464,18 @@ class TeacherViewModel(
                 failedSubjectCount = failedSubjectCount
             )
         }
-        
+
         // Calculate merit position
         val sortedTabulation = tabulationRows.sortedWith(
             compareBy<TabulationRow> { if (it.finalGrade == "-") 1 else 0 } // Move unevaluated to the bottom
                 .thenBy { it.failedSubjectCount }
                 .thenByDescending { it.totalMarks }
         )
-        
+
         sortedTabulation.mapIndexed { index, row ->
             row.copy(meritPosition = index + 1)
         }.sortedBy { it.student.rollNumber } // Return sorted by roll number for the grid
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
 
     // --- MARKSHEET STATE ---
     private val _marksheetSearchQuery = MutableStateFlow("")

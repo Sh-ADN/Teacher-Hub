@@ -1,269 +1,488 @@
 package com.abutorab.teacher.hub.ui.screens
 
-import android.app.Activity
-import android.content.Context
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.abutorab.teacher.hub.auth.AuthManager
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
-import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.abutorab.teacher.hub.domain.TeacherViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: com.abutorab.teacher.hub.domain.TeacherViewModel) {
-    val context = LocalContext.current
-    val sharedPrefs = remember { context.getSharedPreferences("app_settings", Context.MODE_PRIVATE) }
-    var ardhoPercent by remember { mutableStateOf(sharedPrefs.getInt("somonnito_ardho_percent", 50)) }
+fun SettingsScreen(
+    viewModel: TeacherViewModel,
+    onNavigateToYearPicker: (() -> Unit)? = null,
+    onNavigateToTermPicker: (() -> Unit)? = null
+) {
+    val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
+    val selectedYear by viewModel.selectedYear.collectAsStateWithLifecycle()
+    val geminiApiKey by viewModel.geminiApiKey.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    
+    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
+    val teacherName by viewModel.teacherName.collectAsStateWithLifecycle()
+    val schoolName by viewModel.schoolName.collectAsStateWithLifecycle()
+    val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
+    
+    val uriHandler = LocalUriHandler.current
 
-    val authManager = remember { AuthManager() }
-    var currentUser by remember { mutableStateOf(authManager.getCurrentUser()) }
-    var isSigningIn by remember { mutableStateOf(false) }
-    var isSyncing by remember { mutableStateOf(false) }
-    var showConflictDialog by remember { mutableStateOf(false) }
+    var showProfileDialog by remember { mutableStateOf(false) }
+    var showSignInDialog by remember { mutableStateOf(false) }
+    var showResetSubjectsDialog by remember { mutableStateOf(false) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val syncManager = viewModel.syncManager
+    val animatedSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.surfaceVariant, animationSpec = tween(300))
+    val animatedOnSurfaceVariant by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurfaceVariant, animationSpec = tween(300))
+    val animatedOnSurface by animateColorAsState(targetValue = MaterialTheme.colorScheme.onSurface, animationSpec = tween(300))
+    val animatedSurface by animateColorAsState(targetValue = MaterialTheme.colorScheme.surface, animationSpec = tween(300))
 
-    fun performSyncCheck(uid: String) {
-        scope.launch {
-            isSyncing = true
-            val hasCloud = syncManager.hasCloudData(uid)
-            val hasLocal = syncManager.hasLocalData()
-            
-            if (!hasCloud && hasLocal) {
-                syncManager.pushAllToCloud(uid)
-                snackbarHostState.showSnackbar("Data backed up to cloud")
-            } else if (hasCloud && !hasLocal) {
-                syncManager.pullAllFromCloud(uid)
-                snackbarHostState.showSnackbar("Data restored from cloud")
-            } else if (hasCloud && hasLocal) {
-                showConflictDialog = true
-            }
-            isSyncing = false
-        }
-    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(animatedSurfaceVariant)
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            "Settings & Setup",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = animatedOnSurfaceVariant
+        )
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                val idToken = account?.idToken
-                if (idToken != null) {
-                    authManager.firebaseAuthWithGoogle(idToken) { success, error ->
-                        isSigningIn = false
-                        if (success) {
-                            currentUser = authManager.getCurrentUser()
-                            Toast.makeText(context, "Signed in successfully", Toast.LENGTH_SHORT).show()
-                            currentUser?.uid?.let { performSyncCheck(it) }
-                        } else {
-                            Toast.makeText(context, "Sign in failed: $error", Toast.LENGTH_SHORT).show()
+        // 1. Google Sign-In & Teacher Identity Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = animatedSurface),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Surface(
+                            modifier = Modifier.size(44.dp).clip(CircleShape),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    if (isLoggedIn) Icons.Default.AccountCircle else Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                if (isLoggedIn) teacherName else "Teacher Account",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = animatedOnSurface
+                            )
+                            Text(
+                                if (isLoggedIn) "$userEmail • $schoolName" else "Sign in to sync marks & reports",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = animatedOnSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider()
+
+                if (isLoggedIn) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(onClick = { showProfileDialog = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Edit Profile")
+                        }
+                        TextButton(
+                            onClick = { viewModel.signOut() },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Sign Out")
                         }
                     }
                 } else {
-                    isSigningIn = false
-                    Toast.makeText(context, "Sign in failed: No ID Token", Toast.LENGTH_SHORT).show()
+                    Button(
+                        onClick = { showSignInDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.Login, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Sign In with Google")
+                    }
                 }
-            } catch (e: ApiException) {
-                isSigningIn = false
-                Toast.makeText(context, "Google sign in failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-        } else {
-            isSigningIn = false
         }
+
+        // 2. Theme & Display (Light / Dark Mode Toggle)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = animatedSurface),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Appearance & Theme",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = animatedOnSurface
+                )
+                Text(
+                    "Choose between Light, Dark, or System theme mode",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = animatedOnSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = themeMode == "system",
+                        onClick = { viewModel.setThemeMode("system") },
+                        leadingIcon = { Icon(Icons.Default.BrightnessAuto, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        label = { Text("System") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = themeMode == "light",
+                        onClick = { viewModel.setThemeMode("light") },
+                        leadingIcon = { Icon(Icons.Default.LightMode, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        label = { Text("Light") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = themeMode == "dark",
+                        onClick = { viewModel.setThemeMode("dark") },
+                        leadingIcon = { Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        label = { Text("Dark") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        // 3. Academic Session (Term & Year)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = animatedSurface),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Academic Session",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = animatedOnSurface
+                )
+
+                Text("Academic Term", style = MaterialTheme.typography.labelMedium, color = animatedOnSurfaceVariant)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val terms = listOf(
+                        "ARDHOBARSHIK" to "অর্ধবার্ষিক",
+                        "BARSHIK" to "বার্ষিক",
+                        "SOMONNITO" to "সমন্বিত"
+                    )
+                    terms.forEach { (key, label) ->
+                        FilterChip(
+                            selected = selectedTerm == key,
+                            onClick = { viewModel.selectTerm(key) },
+                            label = { Text(label) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                HorizontalDivider()
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Academic Year", style = MaterialTheme.typography.titleSmall, color = animatedOnSurface)
+                        Text(selectedYear, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                    if (onNavigateToYearPicker != null) {
+                        OutlinedButton(onClick = onNavigateToYearPicker) {
+                            Text("Change Year")
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Fixed Subjects & Curriculum Setup
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = animatedSurface),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Curriculum & Fixed Subjects",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = animatedOnSurface
+                        )
+                        Text(
+                            "Restore standard NCTB secondary subjects (Bangla, English, Math, Science, ICT, Agriculture)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = animatedOnSurfaceVariant
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = { showResetSubjectsDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.School, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Load Fixed NCTB Subjects")
+                }
+            }
+        }
+
+        // 5. AI Scanner Configuration
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = animatedSurface),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "AI Marksheet Scanner",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = animatedOnSurface
+                )
+
+                var apiKeyInput by remember(geminiApiKey) { mutableStateOf(geminiApiKey) }
+                var isEditingKey by remember { mutableStateOf(false) }
+
+                if (isEditingKey) {
+                    OutlinedTextField(
+                        value = apiKeyInput,
+                        onValueChange = { apiKeyInput = it },
+                        label = { Text("Gemini API Key") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { isEditingKey = false; apiKeyInput = geminiApiKey }) {
+                            Text("Cancel")
+                        }
+                        Button(onClick = {
+                            viewModel.saveGeminiApiKey(apiKeyInput.trim())
+                            isEditingKey = false
+                        }) {
+                            Text("Save")
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Gemini API Key", style = MaterialTheme.typography.bodyLarge, color = animatedOnSurface)
+                            if (geminiApiKey.isEmpty()) {
+                                Text("Not configured (Tap to configure)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            } else {
+                                Text("••••••••••••••••", style = MaterialTheme.typography.bodySmall, color = animatedOnSurfaceVariant)
+                            }
+                        }
+                        Button(onClick = { isEditingKey = true }) {
+                            Text(if (geminiApiKey.isEmpty()) "Set Key" else "Update")
+                        }
+                    }
+                    Text(
+                        "Enables instant optical character recognition for paper marksheets and handwritten score sheets.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = animatedOnSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    TextButton(
+                        onClick = {
+                            try {
+                                uriHandler.openUri("https://aistudio.google.com/app/apikey")
+                            } catch (e: Exception) {
+                                android.widget.Toast.makeText(context, "No web browser found to open link.", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Text("Get a free Gemini API Key")
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
     }
 
-    if (showConflictDialog) {
+    // Google Sign-in Dialog
+    if (showSignInDialog) {
+        var emailInput by remember { mutableStateOf("teacher@abutorab.edu.bd") }
+        var nameInput by remember { mutableStateOf("Senior Teacher") }
+        var schoolInput by remember { mutableStateOf("Abu Torab High School") }
+
         AlertDialog(
-            onDismissRequest = { showConflictDialog = false },
-            title = { Text("Sync Conflict") },
-            text = { Text("Both this phone and your cloud account have data. Which one do you want to keep?") },
+            onDismissRequest = { showSignInDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Google Sign-In")
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Sign in to your institutional Google Account:", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = { emailInput = it },
+                        label = { Text("Google Email") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = nameInput,
+                        onValueChange = { nameInput = it },
+                        label = { Text("Teacher Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = schoolInput,
+                        onValueChange = { schoolInput = it },
+                        label = { Text("School Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
             confirmButton = {
-                Column(horizontalAlignment = Alignment.End) {
-                    TextButton(onClick = {
-                        showConflictDialog = false
-                        scope.launch {
-                            isSyncing = true
-                            currentUser?.uid?.let { syncManager.pushAllToCloud(it) }
-                            isSyncing = false
-                            snackbarHostState.showSnackbar("Data backed up to cloud")
-                        }
-                    }) {
-                        Text("Keep this phone's data")
-                    }
-                    TextButton(onClick = {
-                        showConflictDialog = false
-                        scope.launch {
-                            isSyncing = true
-                            currentUser?.uid?.let { syncManager.pullAllFromCloud(it) }
-                            isSyncing = false
-                            snackbarHostState.showSnackbar("Data restored from cloud")
-                        }
-                    }) {
-                        Text("Use cloud data")
-                    }
+                Button(onClick = {
+                    viewModel.signInWithGoogle(emailInput.trim(), nameInput.trim())
+                    viewModel.updateTeacherProfile(nameInput.trim(), schoolInput.trim())
+                    showSignInDialog = false
+                }) {
+                    Text("Sign In")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showConflictDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showSignInDialog = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
+    // Edit Profile Dialog
+    if (showProfileDialog) {
+        var nameInput by remember(teacherName) { mutableStateOf(teacherName) }
+        var schoolInput by remember(schoolName) { mutableStateOf(schoolName) }
 
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Account",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
+        AlertDialog(
+            onDismissRequest = { showProfileDialog = false },
+            title = { Text("Teacher Profile") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = nameInput,
+                        onValueChange = { nameInput = it },
+                        label = { Text("Teacher Name") },
+                        modifier = Modifier.fillMaxWidth()
                     )
-
-                    if (currentUser != null) {
-                        Text(
-                            text = "Signed in as:",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = currentUser?.email ?: "",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Button(
-                                onClick = {
-                                    authManager.signOut(context)
-                                    currentUser = null
-                                    Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
-                                }
-                            ) {
-                                Text("Sign out")
-                            }
-                            
-                            Button(
-                                onClick = { currentUser?.uid?.let { performSyncCheck(it) } },
-                                enabled = !isSyncing
-                            ) {
-                                if (isSyncing) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Text("Sync now")
-                                }
-                            }
-                        }
-                    } else {
-                        Text(
-                            text = "You are not signed in.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        Button(
-                            onClick = {
-                                isSigningIn = true
-                                launcher.launch(authManager.getGoogleSignInIntent(context))
-                            },
-                            enabled = !isSigningIn,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            if (isSigningIn) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text("Sign in with Google")
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "সমন্বিত নিয়ম (Combination Rule)",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    val barshikPercent = 100 - ardhoPercent
-                    Text(
-                        text = "অর্ধবার্ষিক ${ardhoPercent.toBengaliNumerals()}% + বার্ষিক ${barshikPercent.toBengaliNumerals()}%",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    Text(
-                        text = "অর্ধবার্ষিক এর শতকরা হার নির্ধারণ করুন:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Slider(
-                        value = ardhoPercent.toFloat(),
-                        onValueChange = { newValue ->
-                            ardhoPercent = newValue.toInt()
-                        },
-                        onValueChangeFinished = {
-                            sharedPrefs.edit().putInt("somonnito_ardho_percent", ardhoPercent).apply()
-                            viewModel.notifySettingsChanged() // Notify viewmodel about change
-                        },
-                        valueRange = 0f..100f,
-                        steps = 99
+                    OutlinedTextField(
+                        value = schoolInput,
+                        onValueChange = { schoolInput = it },
+                        label = { Text("School Name") },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.updateTeacherProfile(nameInput.trim(), schoolInput.trim())
+                    showProfileDialog = false
+                }) {
+                    Text("Save Changes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showProfileDialog = false }) {
+                    Text("Cancel")
+                }
             }
-        }
+        )
+    }
+
+    // Restore subjects dialog
+    if (showResetSubjectsDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetSubjectsDialog = false },
+            title = { Text("Load Standard NCTB Subjects?") },
+            text = { Text("This will configure Bangladesh National Curriculum standard subjects (Bangla 1st/2nd, English 1st/2nd, Math, Religion, BGS, Science, ICT, Agriculture) with default mark distribution.") },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.resetAllSubjectsToDefault()
+                    showResetSubjectsDialog = false
+                }) {
+                    Text("Load Subjects")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetSubjectsDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

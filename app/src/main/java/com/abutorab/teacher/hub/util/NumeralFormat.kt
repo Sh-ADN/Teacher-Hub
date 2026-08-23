@@ -12,4 +12,9 @@ object NumeralFormat {
             }
         }.joinToString("")
     }
+
+    fun toBengaliNumerals(number: Any?): String {
+        if (number == null) return "-"
+        return localize(number.toString(), true)
+    }
 }
