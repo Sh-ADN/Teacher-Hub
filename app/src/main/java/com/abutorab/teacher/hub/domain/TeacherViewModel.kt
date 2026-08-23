@@ -66,6 +66,9 @@ class TeacherViewModel(
     private val _userEmail = MutableStateFlow(userPrefs.getString("user_email", authManager.getCurrentUser()?.email ?: "teacher@abutorab.edu.bd") ?: "teacher@abutorab.edu.bd")
     val userEmail: StateFlow<String> = _userEmail.asStateFlow()
 
+    private val _showSyncConflictDialog = MutableStateFlow(false)
+    val showSyncConflictDialog: StateFlow<Boolean> = _showSyncConflictDialog.asStateFlow()
+
     fun signInWithGoogle(context: Context) {
         viewModelScope.launch {
             val result = authManager.signInWithGoogle(context)
@@ -80,10 +83,59 @@ class TeacherViewModel(
                 _isLoggedIn.value = true
                 _userEmail.value = email
                 _teacherName.value = name
+
+                // Restore this: decide push vs pull now that we have a uid
+                val uid = user.uid
+                val hasCloud = syncManager.hasCloudData(uid)
+                val hasLocal = syncManager.hasLocalData()
+                when {
+                    !hasCloud && hasLocal -> syncManager.pushAllToCloud(uid)
+                    hasCloud && !hasLocal -> syncManager.pullAllFromCloud(uid)
+                    hasCloud && hasLocal -> { 
+                        _showSyncConflictDialog.value = true
+                    }
+                }
             }.onFailure { e ->
                 android.widget.Toast.makeText(context, "Sign-in failed: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    fun triggerManualSync() {
+        val user = authManager.getCurrentUser() ?: return
+        viewModelScope.launch {
+            val uid = user.uid
+            val hasCloud = syncManager.hasCloudData(uid)
+            val hasLocal = syncManager.hasLocalData()
+            when {
+                !hasCloud && hasLocal -> syncManager.pushAllToCloud(uid)
+                hasCloud && !hasLocal -> syncManager.pullAllFromCloud(uid)
+                hasCloud && hasLocal -> { 
+                    _showSyncConflictDialog.value = true
+                }
+            }
+        }
+    }
+
+    fun resolveSyncConflict(keepLocal: Boolean) {
+        val user = authManager.getCurrentUser()
+        if (user != null) {
+            viewModelScope.launch {
+                val uid = user.uid
+                if (keepLocal) {
+                    syncManager.pushAllToCloud(uid)
+                } else {
+                    syncManager.pullAllFromCloud(uid)
+                }
+                _showSyncConflictDialog.value = false
+            }
+        } else {
+            _showSyncConflictDialog.value = false
+        }
+    }
+
+    fun dismissSyncConflict() {
+        _showSyncConflictDialog.value = false
     }
 
     fun signOut(context: Context? = null) {

@@ -38,6 +38,7 @@ fun SettingsScreen(
     val teacherName by viewModel.teacherName.collectAsStateWithLifecycle()
     val schoolName by viewModel.schoolName.collectAsStateWithLifecycle()
     val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
+    val showSyncConflictDialog by viewModel.showSyncConflictDialog.collectAsStateWithLifecycle()
     
     val uriHandler = LocalUriHandler.current
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -129,6 +130,18 @@ fun SettingsScreen(
                             Spacer(Modifier.width(6.dp))
                             Text("Sign Out")
                         }
+                    }
+                    Button(
+                        onClick = { viewModel.triggerManualSync() },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Sync Now")
                     }
                 } else {
                     
@@ -430,6 +443,24 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = { showResetSubjectsDialog = false }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showSyncConflictDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissSyncConflict() },
+            title = { Text("Sync Conflict Detected") },
+            text = { Text("You have local data on this device, but there is also existing data backed up on the cloud. Which data do you want to keep?") },
+            confirmButton = {
+                Button(onClick = { viewModel.resolveSyncConflict(keepLocal = true) }) {
+                    Text("Keep Local Data")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { viewModel.resolveSyncConflict(keepLocal = false) }) {
+                    Text("Pull Cloud Data")
                 }
             }
         )
