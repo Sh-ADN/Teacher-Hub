@@ -43,7 +43,7 @@ enum class AppScreen(val title: String) {
 @Composable
 fun MainScreen(viewModel: TeacherViewModel) {
     var currentScreen by remember {
-        mutableStateOf(if (viewModel.selectedTerm.value == "SOMONNITO") AppScreen.TABULATION else AppScreen.QUICK_EDIT)
+        mutableStateOf(AppScreen.TABULATION)
     }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -407,17 +407,17 @@ fun MainScreen(viewModel: TeacherViewModel) {
                     AppScreen.YEAR_PICKER -> YearPickerScreen(
                         onYearSelected = { year ->
                             viewModel.selectYear(year.toString())
-                            currentScreen = if (selectedTerm == "SOMONNITO") AppScreen.TABULATION else AppScreen.QUICK_EDIT
+                            currentScreen = AppScreen.TABULATION
                         }
                     )
                     AppScreen.TERM_PICKER -> TermPickerScreen(
                         selectedYear = selectedYear.toIntOrNull() ?: 2026,
                         onTermSelected = { term ->
                             viewModel.selectTerm(term)
-                            currentScreen = if (term == "SOMONNITO") AppScreen.TABULATION else AppScreen.QUICK_EDIT
+                            currentScreen = AppScreen.TABULATION
                         },
                         onBack = { 
-                            currentScreen = if (selectedTerm == "SOMONNITO") AppScreen.TABULATION else AppScreen.QUICK_EDIT 
+                            currentScreen = AppScreen.TABULATION
                         }
                     )
                     AppScreen.SETTINGS -> SettingsScreen(

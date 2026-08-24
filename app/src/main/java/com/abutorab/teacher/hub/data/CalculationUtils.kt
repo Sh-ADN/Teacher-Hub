@@ -14,11 +14,11 @@ object CalculationUtils {
         val ardho = ardhoMarks.find { it.rollNumber == rollNumber && it.subjectId == subjectId && it.year == year && it.term == "ARDHOBARSHIK" }
         val barshik = barshikMarks.find { it.rollNumber == rollNumber && it.subjectId == subjectId && it.year == year && it.term == "BARSHIK" }
 
-        if (ardho == null || barshik == null) return null
+        if (ardho == null && barshik == null) return null
 
-        val mcq = calculateCombined(ardho.mcq, barshik.mcq, ardhoPercent)
-        val written = calculateCombined(ardho.written, barshik.written, ardhoPercent)
-        val practical = calculateCombined(ardho.practical, barshik.practical, ardhoPercent)
+        val mcq = calculateCombined(ardho?.mcq, barshik?.mcq, ardhoPercent)
+        val written = calculateCombined(ardho?.written, barshik?.written, ardhoPercent)
+        val practical = calculateCombined(ardho?.practical, barshik?.practical, ardhoPercent)
 
         return MarkEntity(
             rollNumber = rollNumber,

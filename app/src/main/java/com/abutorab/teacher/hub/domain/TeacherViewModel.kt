@@ -199,37 +199,46 @@ class TeacherViewModel(
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val allMarks = combine(_selectedYearInt, _selectedTerm, _ardhoPercent, ::Triple)
-        .flatMapLatest { (year, term, ardhoPct) ->
-            if (term == "SOMONNITO") {
-                combine(
-                    repository.getAllMarks(year, "ARDHOBARSHIK"),
-                    repository.getAllMarks(year, "BARSHIK"),
-                    allStudents,
-                    allSubjects
-                ) { ardhoMarks, barshikMarks, students, subjectsList ->
-                    val combinedMarks = mutableListOf<MarkEntity>()
-                    for (student in students) {
-                        for (subj in subjectsList) {
-                            val computed = CalculationUtils.getSomonnitoMarks(
-                                year = year,
-                                rollNumber = student.rollNumber,
-                                subjectId = subj.id,
-                                ardhoPercent = ardhoPct,
-                                ardhoMarks = ardhoMarks,
-                                barshikMarks = barshikMarks
-                            )
-                            if (computed != null) {
-                                combinedMarks.add(computed)
-                            }
+    val ardhoMarks = _selectedYearInt.flatMapLatest { year ->
+        repository.getAllMarks(year, "ARDHOBARSHIK")
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val barshikMarks = _selectedYearInt.flatMapLatest { year ->
+        repository.getAllMarks(year, "BARSHIK")
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val allMarks = combine(_selectedYearInt, _selectedTerm, _ardhoPercent, ardhoMarks, barshikMarks) { year, term, ardhoPct, ardhoList, barshikList ->
+        Triple(Triple(year, term, ardhoPct), ardhoList, barshikList)
+    }.flatMapLatest { (triple, ardhoList, barshikList) ->
+        val (year, term, ardhoPct) = triple
+        if (term == "SOMONNITO") {
+            combine(allStudents, allSubjects) { students, subjectsList ->
+                val combinedMarks = mutableListOf<MarkEntity>()
+                for (student in students) {
+                    for (subj in subjectsList) {
+                        val computed = CalculationUtils.getSomonnitoMarks(
+                            year = year,
+                            rollNumber = student.rollNumber,
+                            subjectId = subj.id,
+                            ardhoPercent = ardhoPct,
+                            ardhoMarks = ardhoList,
+                            barshikMarks = barshikList
+                        )
+                        if (computed != null) {
+                            combinedMarks.add(computed)
                         }
                     }
-                    combinedMarks
                 }
-            } else {
-                repository.getAllMarks(year, term)
+                combinedMarks
             }
-        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        } else if (term == "ARDHOBARSHIK") {
+            flowOf(ardhoList)
+        } else {
+            flowOf(barshikList)
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
         viewModelScope.launch {

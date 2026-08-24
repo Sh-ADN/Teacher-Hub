@@ -14,22 +14,36 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.abutorab.teacher.hub.domain.TeacherViewModel
+import com.abutorab.teacher.hub.domain.calculateGrade
 import com.abutorab.teacher.hub.util.NumeralFormat
+import kotlin.math.roundToInt
 
 private val FailRed = Color(0xFFE53935)
+private val FailDarkRed = Color(0xFFB71C1C)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TabulationScreen(viewModel: TeacherViewModel, onNavigateToMarksheet: (Int) -> Unit = {}) {
     val tabulationData by viewModel.tabulationData.collectAsStateWithLifecycle()
     val allSubjectsRaw by viewModel.allSubjects.collectAsStateWithLifecycle()
+    val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
+    val ardhoMarks by viewModel.ardhoMarks.collectAsStateWithLifecycle()
+    val barshikMarks by viewModel.barshikMarks.collectAsStateWithLifecycle()
+
+    val isSomonnito = selectedTerm == "SOMONNITO"
+
     val allSubjects = remember(allSubjectsRaw) {
         allSubjectsRaw.sortedBy { subj ->
             val idx = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.indexOfFirst { it.id == subj.id }
@@ -66,7 +80,13 @@ fun TabulationScreen(viewModel: TeacherViewModel, onNavigateToMarksheet: (Int) -
                 Row(modifier = Modifier.weight(1f).horizontalScroll(horizontalScrollState)) {
                     allSubjects.forEach { subj -> 
                         val bengaliTitle = com.abutorab.teacher.hub.domain.PREDEFINED_SUBJECTS.find { it.id == subj.id }?.bengaliTitle ?: subj.title
-                        val width = if (subj.hasMcq && subj.hasWritten && subj.hasPractical) 152.dp else if ((subj.hasMcq && subj.hasWritten) || (subj.hasWritten && subj.hasPractical) || (subj.hasMcq && subj.hasPractical)) 112.dp else 76.dp
+                        val width = if (isSomonnito) {
+                            120.dp
+                        } else {
+                            if (subj.hasMcq && subj.hasWritten && subj.hasPractical) 152.dp 
+                            else if ((subj.hasMcq && subj.hasWritten) || (subj.hasWritten && subj.hasPractical) || (subj.hasMcq && subj.hasPractical)) 112.dp 
+                            else 76.dp
+                        }
                         HeaderCell(bengaliTitle, width) 
                     }
                     summaryColumns.forEach { (label, width) -> HeaderCell(label, width) }
@@ -99,17 +119,64 @@ fun TabulationScreen(viewModel: TeacherViewModel, onNavigateToMarksheet: (Int) -
                         DataCell(rowData.student.name, 120.dp, alignStart = true, localize = false)
                         Row(modifier = Modifier.weight(1f).horizontalScroll(horizontalScrollState)) {
                             allSubjects.forEach { subj ->
-                                val width = if (subj.hasMcq && subj.hasWritten && subj.hasPractical) 152.dp else if ((subj.hasMcq && subj.hasWritten) || (subj.hasWritten && subj.hasPractical) || (subj.hasMcq && subj.hasPractical)) 112.dp else 76.dp
-                                val sr = rowData.results[subj.id]
-                                val textParts = mutableListOf<String>()
-                                if (subj.hasMcq) textParts.add(sr?.mcq?.toString() ?: "-")
-                                if (subj.hasWritten) textParts.add(sr?.written?.toString() ?: "-")
-                                if (subj.hasPractical) textParts.add(sr?.practical?.toString() ?: "-")
-                                val text = textParts.joinToString("+") + if (textParts.size > 1) "=${sr?.total ?: "-"}" else ""
+                                val width = if (isSomonnito) {
+                                    120.dp
+                                } else {
+                                    if (subj.hasMcq && subj.hasWritten && subj.hasPractical) 152.dp 
+                                    else if ((subj.hasMcq && subj.hasWritten) || (subj.hasWritten && subj.hasPractical) || (subj.hasMcq && subj.hasPractical)) 112.dp 
+                                    else 76.dp
+                                }
 
-                                val isFail = sr?.grade?.point == 0.0 && sr.total > 0
-                                val cellColor = if (isFail) FailRed else MaterialTheme.colorScheme.onSurface
-                                DataCell(text, width, color = cellColor)
+                                if (isSomonnito) {
+                                    val ardhoMark = ardhoMarks.find { it.rollNumber == rowData.student.rollNumber && it.subjectId == subj.id }
+                                    val barshikMark = barshikMarks.find { it.rollNumber == rowData.student.rollNumber && it.subjectId == subj.id }
+                                    val hasArdho = ardhoMark != null && (ardhoMark.mcq != null || ardhoMark.written != null || ardhoMark.practical != null)
+                                    val hasBarshik = barshikMark != null && (barshikMark.mcq != null || barshikMark.written != null || barshikMark.practical != null)
+
+                                    if (!hasArdho && !hasBarshik) {
+                                        DataCell("-", width)
+                                    } else {
+                                        val ardhoTotal = (ardhoMark?.mcq ?: 0) + (ardhoMark?.written ?: 0) + (ardhoMark?.practical ?: 0)
+                                        val barshikTotal = (barshikMark?.mcq ?: 0) + (barshikMark?.written ?: 0) + (barshikMark?.practical ?: 0)
+                                        val twoTermTotal = ardhoTotal + barshikTotal
+                                        val exactAvg = twoTermTotal / 2.0
+                                        val exactAvgStr = if (exactAvg % 1.0 == 0.0) exactAvg.toInt().toString() else exactAvg.toString()
+
+                                        val prefix = NumeralFormat.localize("$twoTermTotal÷2=", true)
+                                        val avgPart = NumeralFormat.localize(exactAvgStr, true)
+
+                                        val isFail = (exactAvg < subj.passMarks) || (calculateGrade(exactAvg.roundToInt(), subj.maxMarks).point == 0.0)
+
+                                        val cellAnnotated = buildAnnotatedString {
+                                            append(prefix)
+                                            if (isFail) {
+                                                withStyle(
+                                                    style = SpanStyle(
+                                                        color = FailDarkRed,
+                                                        textDecoration = TextDecoration.Underline,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                ) {
+                                                    append(avgPart)
+                                                }
+                                            } else {
+                                                append(avgPart)
+                                            }
+                                        }
+                                        DataCell(cellAnnotated, width)
+                                    }
+                                } else {
+                                    val sr = rowData.results[subj.id]
+                                    val textParts = mutableListOf<String>()
+                                    if (subj.hasMcq) textParts.add(sr?.mcq?.toString() ?: "-")
+                                    if (subj.hasWritten) textParts.add(sr?.written?.toString() ?: "-")
+                                    if (subj.hasPractical) textParts.add(sr?.practical?.toString() ?: "-")
+                                    val text = textParts.joinToString("+") + if (textParts.size > 1) "=${sr?.total ?: "-"}" else ""
+
+                                    val isFail = sr?.grade?.point == 0.0 && sr.total > 0
+                                    val cellColor = if (isFail) FailRed else MaterialTheme.colorScheme.onSurface
+                                    DataCell(text, width, color = cellColor)
+                                }
                             }
                             DataCell(rowData.totalMarks.toString(), 64.dp)
                             val isNoMarks = rowData.finalGrade == "-"
@@ -150,6 +217,20 @@ private fun DataCell(text: String, width: Dp, alignStart: Boolean = false, color
     Box(modifier = Modifier.width(width).padding(horizontal = 3.dp), contentAlignment = if (alignStart) Alignment.CenterStart else Alignment.Center) {
         Text(
             NumeralFormat.localize(text, localize),
+            style = MaterialTheme.typography.bodyMedium,
+            color = color,
+            textAlign = if (alignStart) TextAlign.Start else TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun DataCell(annotatedText: AnnotatedString, width: Dp, alignStart: Boolean = false, color: Color = MaterialTheme.colorScheme.onSurface) {
+    Box(modifier = Modifier.width(width).padding(horizontal = 3.dp), contentAlignment = if (alignStart) Alignment.CenterStart else Alignment.Center) {
+        Text(
+            text = annotatedText,
             style = MaterialTheme.typography.bodyMedium,
             color = color,
             textAlign = if (alignStart) TextAlign.Start else TextAlign.Center,
