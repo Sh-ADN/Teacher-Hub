@@ -62,8 +62,11 @@ class SyncManager(private val repository: AppRepository) {
         val subjects = subjectsSnapshot.documents.mapNotNull { it.toObject(SubjectEntity::class.java) }
         val marks = marksSnapshot.documents.mapNotNull { it.toObject(MarkEntity::class.java) }
 
-        repository.clearAllDataGlobal()
-        repository.saveAllData(subjects, students, marks)
+        if (students.isNotEmpty() || subjects.isNotEmpty() || marks.isNotEmpty()) {
+            repository.clearAllDataGlobal()
+            repository.saveAllData(subjects, students, marks)
+            repository.ensurePredefinedSubjectsExist()
+        }
     }
 
     suspend fun pushSingleChange(uid: String, collection: String, id: String, data: Any) {

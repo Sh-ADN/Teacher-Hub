@@ -244,6 +244,22 @@ class TeacherViewModel(
         viewModelScope.launch {
             repository.createInitialDataIfEmpty()
             repository.ensurePredefinedSubjectsExist()
+
+            // Auto-fetch from cloud if logged in so user data is never lost across sessions/reloads
+            val currentUser = authManager.getCurrentUser()
+            if (currentUser != null) {
+                val uid = currentUser.uid
+                try {
+                    val hasCloud = syncManager.hasCloudData(uid)
+                    if (hasCloud) {
+                        syncManager.pullAllFromCloud(uid)
+                    } else if (syncManager.hasLocalData()) {
+                        syncManager.pushAllToCloud(uid)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
@@ -270,6 +286,9 @@ class TeacherViewModel(
         viewModelScope.launch {
             val student = StudentEntity(rollNumber = rollNumber, name = name, year = _selectedYearInt.value)
             repository.insertStudent(student)
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.pushSingleChange(uid, "students", "${student.year}_${student.rollNumber}", student)
+            }
         }
     }
 
@@ -293,6 +312,9 @@ class TeacherViewModel(
             }
             if (studentsToImport.isNotEmpty()) {
                 repository.insertStudents(studentsToImport)
+                authManager.getCurrentUser()?.uid?.let { uid ->
+                    syncManager.pushAllToCloud(uid)
+                }
             }
         }
     }
@@ -300,12 +322,18 @@ class TeacherViewModel(
     fun updateStudent(student: StudentEntity) {
         viewModelScope.launch {
             repository.updateStudent(student)
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.pushSingleChange(uid, "students", "${student.year}_${student.rollNumber}", student)
+            }
         }
     }
 
     fun deleteStudent(student: StudentEntity) {
         viewModelScope.launch {
             repository.deleteStudent(student)
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.deleteSingleDocument(uid, "students", "${student.year}_${student.rollNumber}")
+            }
         }
     }
 
@@ -322,20 +350,22 @@ class TeacherViewModel(
         maxPractical: Int
     ) {
         viewModelScope.launch {
-            repository.insertSubject(
-                SubjectEntity(
-                    id = id,
-                    title = title,
-                    maxMarks = maxMarks,
-                    passMarks = passMarks,
-                    hasMcq = hasMcq,
-                    maxMcq = maxMcq,
-                    hasWritten = hasWritten,
-                    maxWritten = maxWritten,
-                    hasPractical = hasPractical,
-                    maxPractical = maxPractical
-                )
+            val subject = SubjectEntity(
+                id = id,
+                title = title,
+                maxMarks = maxMarks,
+                passMarks = passMarks,
+                hasMcq = hasMcq,
+                maxMcq = maxMcq,
+                hasWritten = hasWritten,
+                maxWritten = maxWritten,
+                hasPractical = hasPractical,
+                maxPractical = maxPractical
             )
+            repository.insertSubject(subject)
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.pushSingleChange(uid, "subjects", subject.id, subject)
+            }
         }
     }
 
@@ -352,44 +382,58 @@ class TeacherViewModel(
             val hasWritten = maxWritten > 0
             val hasPractical = maxPractical > 0
             val maxMarks = (if (hasMcq) maxMcq else 0) + (if (hasWritten) maxWritten else 0) + (if (hasPractical) maxPractical else 0)
-            repository.insertSubject(
-                SubjectEntity(
-                    id = id,
-                    title = title,
-                    maxMarks = if (maxMarks > 0) maxMarks else 100,
-                    passMarks = 33,
-                    hasMcq = hasMcq,
-                    maxMcq = maxMcq,
-                    hasWritten = hasWritten,
-                    maxWritten = maxWritten,
-                    hasPractical = hasPractical,
-                    maxPractical = maxPractical
-                )
+            val subject = SubjectEntity(
+                id = id,
+                title = title,
+                maxMarks = if (maxMarks > 0) maxMarks else 100,
+                passMarks = 33,
+                hasMcq = hasMcq,
+                maxMcq = maxMcq,
+                hasWritten = hasWritten,
+                maxWritten = maxWritten,
+                hasPractical = hasPractical,
+                maxPractical = maxPractical
             )
+            repository.insertSubject(subject)
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.pushSingleChange(uid, "subjects", subject.id, subject)
+            }
         }
     }
 
     fun updateSubject(subject: SubjectEntity) {
         viewModelScope.launch {
             repository.updateSubject(subject)
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.pushSingleChange(uid, "subjects", subject.id, subject)
+            }
         }
     }
 
     fun deleteSubject(subject: SubjectEntity, replaceWithId: String? = null) {
         viewModelScope.launch {
             repository.deleteSubjectAndTransferMarks(subject, replaceWithId)
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.deleteSingleDocument(uid, "subjects", subject.id)
+            }
         }
     }
 
     fun resetAllSubjectsToDefault() {
         viewModelScope.launch {
             repository.ensurePredefinedSubjectsExist()
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.pushAllToCloud(uid)
+            }
         }
     }
 
     fun loadPredefinedSubjects() {
         viewModelScope.launch {
             repository.ensurePredefinedSubjectsExist()
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                syncManager.pushAllToCloud(uid)
+            }
         }
     }
 
@@ -422,8 +466,22 @@ class TeacherViewModel(
 
     fun saveMark(rollNumber: Int, mcq: Int?, written: Int?, practical: Int?) {
         val subjectId = selectedSubject.value?.id ?: return
+        val year = _selectedYearInt.value
+        val term = _selectedTerm.value
         viewModelScope.launch {
-            repository.saveMark(rollNumber, subjectId, mcq, written, practical, _selectedYearInt.value, _selectedTerm.value)
+            repository.saveMark(rollNumber, subjectId, mcq, written, practical, year, term)
+            authManager.getCurrentUser()?.uid?.let { uid ->
+                val mark = MarkEntity(
+                    rollNumber = rollNumber,
+                    subjectId = subjectId,
+                    year = year,
+                    term = term,
+                    mcq = mcq,
+                    written = written,
+                    practical = practical
+                )
+                syncManager.pushSingleChange(uid, "marks", "${year}_${term}_${rollNumber}_${subjectId}", mark)
+            }
         }
     }
 

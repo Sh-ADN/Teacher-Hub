@@ -130,7 +130,7 @@ abstract class TeacherDatabase : RoomDatabase() {
                     TeacherDatabase::class.java,
                     "teacherhub_database"
                 )
-                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance
