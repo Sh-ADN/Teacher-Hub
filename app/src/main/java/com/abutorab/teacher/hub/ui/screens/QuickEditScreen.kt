@@ -106,16 +106,6 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
                 color = animatedOnSurfaceVariant
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = { showVerificationSheet = true },
-                    enabled = selectedSubject != null
-                ) {
-                    Icon(
-                        Icons.Default.FactCheck,
-                        contentDescription = "Verify Marks / নম্বর ফর্দ",
-                        tint = if (selectedSubject != null) animatedPrimary else animatedOnSurfaceVariant.copy(alpha = 0.38f)
-                    )
-                }
                 IconButton(onClick = {
                     if (geminiApiKey.isEmpty()) {
                         Toast.makeText(context, "Please configure your Gemini API Key in Settings first.", Toast.LENGTH_LONG).show()

@@ -33,7 +33,6 @@ enum class AppScreen(val title: String) {
     TABULATION("Tabulation Sheet"),
     MARKSHEET("Individual Marksheet"),
     MERIT_LIST("Merit Ranking List"),
-    VERIFICATION_SHEET("Verification Sheet (নম্বর ফর্দ)"),
     YEAR_PICKER("Academic Year"),
     TERM_PICKER("Academic Term"),
     SETTINGS("Settings & Setup")
@@ -250,17 +249,6 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
 
-                    NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.FactCheck, contentDescription = null) },
-                        label = { Text("Verification Sheet (নম্বর ফর্দ)") },
-                        selected = currentScreen == AppScreen.VERIFICATION_SHEET,
-                        onClick = {
-                            currentScreen = AppScreen.VERIFICATION_SHEET
-                            scope.launch { drawerState.close() }
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
-
                     HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
 
                     // Section 3: Session
@@ -413,30 +401,6 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         viewModel = viewModel,
                         onBack = { currentScreen = AppScreen.DASHBOARD }
                     )
-                    AppScreen.VERIFICATION_SHEET -> {
-                        val subjects by viewModel.allSubjects.collectAsStateWithLifecycle()
-                        val selectedSubject by viewModel.selectedSubject.collectAsStateWithLifecycle()
-                        val allStudents by viewModel.allStudents.collectAsStateWithLifecycle()
-                        val allMarks by viewModel.allMarks.collectAsStateWithLifecycle()
-                        val selectedYearInt by viewModel.selectedYearInt.collectAsStateWithLifecycle()
-                        val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
-
-                        val currentSubj = selectedSubject ?: subjects.firstOrNull()
-                        if (currentSubj != null) {
-                            VerificationSheetDialog(
-                                year = selectedYearInt,
-                                term = selectedTerm,
-                                subject = currentSubj,
-                                students = allStudents,
-                                marks = allMarks.filter { it.subjectId == currentSubj.id },
-                                onDismiss = { currentScreen = AppScreen.QUICK_EDIT }
-                            )
-                        } else {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text("Please create or select a subject first.")
-                            }
-                        }
-                    }
                     AppScreen.YEAR_PICKER -> YearPickerScreen(
                         onYearSelected = { year ->
                             viewModel.selectYear(year.toString())

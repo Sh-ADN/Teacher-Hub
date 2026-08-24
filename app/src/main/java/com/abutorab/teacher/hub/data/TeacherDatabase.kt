@@ -113,7 +113,7 @@ typealias AppDao = TeacherDao
 
 @Database(
     entities = [StudentEntity::class, SubjectEntity::class, MarkEntity::class],
-    version = 2,
+    version = 5,
     exportSchema = false
 )
 abstract class TeacherDatabase : RoomDatabase() {
@@ -128,9 +128,9 @@ abstract class TeacherDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     TeacherDatabase::class.java,
-                    "teacher_hub_database"
+                    "teacherhub_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance
                 instance
