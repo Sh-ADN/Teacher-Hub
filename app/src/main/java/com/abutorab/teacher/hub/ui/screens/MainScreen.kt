@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,12 +42,20 @@ enum class AppScreen(val title: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: TeacherViewModel) {
-    var currentScreen by remember { mutableStateOf(AppScreen.QUICK_EDIT) }
+    var currentScreen by remember {
+        mutableStateOf(if (viewModel.selectedTerm.value == "SOMONNITO") AppScreen.TABULATION else AppScreen.QUICK_EDIT)
+    }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     val selectedYear by viewModel.selectedYear.collectAsStateWithLifecycle()
     val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
+
+    LaunchedEffect(selectedTerm) {
+        if (selectedTerm == "SOMONNITO" && currentScreen == AppScreen.QUICK_EDIT) {
+            currentScreen = AppScreen.TABULATION
+        }
+    }
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val teacherName by viewModel.teacherName.collectAsStateWithLifecycle()
@@ -152,29 +161,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
 
                     Spacer(Modifier.height(8.dp))
 
-                    // Section 1: Overview
-                    Text(
-                        "MAIN OVERVIEW",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                    )
-
-                    NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
-                        label = { Text("Dashboard & Analytics") },
-                        selected = currentScreen == AppScreen.DASHBOARD,
-                        onClick = {
-                            currentScreen = AppScreen.DASHBOARD
-                            scope.launch { drawerState.close() }
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-
-                    // Section 2: Mark Management
+                    // Section 1: Mark Management & Records
                     Text(
                         "MARKS & ACADEMIC RECORDS",
                         style = MaterialTheme.typography.labelSmall,
@@ -183,16 +170,18 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                     )
 
-                    NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                        label = { Text("Quick Mark Entry") },
-                        selected = currentScreen == AppScreen.QUICK_EDIT,
-                        onClick = {
-                            currentScreen = AppScreen.QUICK_EDIT
-                            scope.launch { drawerState.close() }
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
+                    if (selectedTerm != "SOMONNITO") {
+                        NavigationDrawerItem(
+                            icon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                            label = { Text("Quick Mark Entry") },
+                            selected = currentScreen == AppScreen.QUICK_EDIT,
+                            onClick = {
+                                currentScreen = AppScreen.QUICK_EDIT
+                                scope.launch { drawerState.close() }
+                            },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                        )
+                    }
 
                     NavigationDrawerItem(
                         icon = { Icon(Icons.Default.People, contentDescription = null) },
@@ -211,6 +200,28 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         selected = currentScreen == AppScreen.SUBJECTS,
                         onClick = {
                             currentScreen = AppScreen.SUBJECTS
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+
+                    // Section 2: Main Overview
+                    Text(
+                        "MAIN OVERVIEW",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+
+                    NavigationDrawerItem(
+                        icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
+                        label = { Text("Dashboard & Analytics") },
+                        selected = currentScreen == AppScreen.DASHBOARD,
+                        onClick = {
+                            currentScreen = AppScreen.DASHBOARD
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -360,20 +371,12 @@ fun MainScreen(viewModel: TeacherViewModel) {
                 )
             },
             bottomBar = {
-                if (currentScreen in listOf(AppScreen.QUICK_EDIT, AppScreen.TABULATION, AppScreen.MARKSHEET)) {
+                if (currentScreen in listOf(AppScreen.TABULATION, AppScreen.MARKSHEET)) {
                     NavigationBar(containerColor = animatedSurfaceVariant) {
-                        if (selectedTerm != "SOMONNITO") {
-                            NavigationBarItem(
-                                selected = currentScreen == AppScreen.QUICK_EDIT,
-                                onClick = { currentScreen = AppScreen.QUICK_EDIT },
-                                icon = { Icon(Icons.Default.Edit, contentDescription = "Quick Edit") },
-                                label = { Text("Quick Edit") }
-                            )
-                        }
                         NavigationBarItem(
                             selected = currentScreen == AppScreen.TABULATION,
                             onClick = { currentScreen = AppScreen.TABULATION },
-                            icon = { Icon(Icons.Default.List, contentDescription = "Tabulation") },
+                            icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Tabulation") },
                             label = { Text("Tabulation") }
                         )
                         NavigationBarItem(
@@ -404,16 +407,18 @@ fun MainScreen(viewModel: TeacherViewModel) {
                     AppScreen.YEAR_PICKER -> YearPickerScreen(
                         onYearSelected = { year ->
                             viewModel.selectYear(year.toString())
-                            currentScreen = AppScreen.QUICK_EDIT
+                            currentScreen = if (selectedTerm == "SOMONNITO") AppScreen.TABULATION else AppScreen.QUICK_EDIT
                         }
                     )
                     AppScreen.TERM_PICKER -> TermPickerScreen(
                         selectedYear = selectedYear.toIntOrNull() ?: 2026,
                         onTermSelected = { term ->
                             viewModel.selectTerm(term)
-                            currentScreen = AppScreen.QUICK_EDIT
+                            currentScreen = if (term == "SOMONNITO") AppScreen.TABULATION else AppScreen.QUICK_EDIT
                         },
-                        onBack = { currentScreen = AppScreen.QUICK_EDIT }
+                        onBack = { 
+                            currentScreen = if (selectedTerm == "SOMONNITO") AppScreen.TABULATION else AppScreen.QUICK_EDIT 
+                        }
                     )
                     AppScreen.SETTINGS -> SettingsScreen(
                         viewModel = viewModel,
