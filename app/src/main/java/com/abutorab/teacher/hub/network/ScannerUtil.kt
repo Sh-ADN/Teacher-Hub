@@ -91,6 +91,10 @@ object ScannerUtil {
             val adapter = moshi.adapter(ScanResponse::class.java)
             val scanResponse = adapter.fromJson(cleanedText)
             Result.success(scanResponse?.results ?: emptyList())
+        } catch (e: retrofit2.HttpException) {
+            val errorBody = e.response()?.errorBody()?.string() ?: "Unknown HTTP error"
+            Log.e("ScannerUtil", "HTTP Error ${e.code()}: $errorBody", e)
+            Result.failure(Exception("HTTP ${e.code()}: $errorBody"))
         } catch (e: Exception) {
             Log.e("ScannerUtil", "Error scanning marksheet: ${e.message}", e)
             Result.failure(e)
