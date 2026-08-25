@@ -24,9 +24,18 @@ data class ScanResponse(
 )
 
 object ScannerUtil {
+    fun Bitmap.scaleDown(maxSize: Int = 1024): Bitmap {
+        val ratio = Math.min(maxSize.toFloat() / width, maxSize.toFloat() / height)
+        if (ratio >= 1.0) return this
+        val scaledWidth = (this.width * ratio).toInt()
+        val scaledHeight = (this.height * ratio).toInt()
+        return Bitmap.createScaledBitmap(this, scaledWidth, scaledHeight, true)
+    }
+
     fun Bitmap.toBase64(): String {
+        val scaled = scaleDown()
         val outputStream = ByteArrayOutputStream()
-        compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+        scaled.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
         return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
     }
 
@@ -68,7 +77,10 @@ object ScannerUtil {
                     Part(text = prompt),
                     Part(inlineData = InlineData(mimeType = "image/jpeg", data = bitmap.toBase64()))
                 )
-            ))
+            )),
+            generationConfig = GenerationConfig(
+                responseMimeType = "application/json"
+            )
         )
 
         try {
@@ -78,7 +90,7 @@ object ScannerUtil {
             
             val cleanedText = text.replace("```json", "").replace("```", "").trim()
             
-            val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+            val moshi = Moshi.Builder().build()
             val adapter = moshi.adapter(ScanResponse::class.java)
             val scanResponse = adapter.fromJson(cleanedText)
             scanResponse?.results

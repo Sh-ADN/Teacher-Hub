@@ -12,7 +12,13 @@ import java.util.concurrent.TimeUnit
 @JsonClass(generateAdapter = true)
 data class GenerateContentRequest(
     val contents: List<Content>,
-    val systemInstruction: Content? = null
+    val systemInstruction: Content? = null,
+    val generationConfig: GenerationConfig? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class GenerationConfig(
+    val responseMimeType: String? = null
 )
 
 @JsonClass(generateAdapter = true)
