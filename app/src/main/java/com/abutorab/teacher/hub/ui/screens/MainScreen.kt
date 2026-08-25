@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -42,18 +43,29 @@ enum class AppScreen(val title: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: TeacherViewModel) {
-    var currentScreen by remember {
-        mutableStateOf(AppScreen.TABULATION)
+    val backStack = remember { mutableStateListOf(AppScreen.TABULATION) }
+    val currentScreen = backStack.last()
+
+    fun navigateTo(screen: AppScreen) {
+        if (backStack.contains(screen)) {
+            backStack.remove(screen)
+        }
+        backStack.add(screen)
     }
+
+    BackHandler(enabled = backStack.size > 1) {
+        backStack.removeAt(backStack.lastIndex)
+    }
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     val selectedYear by viewModel.selectedYear.collectAsStateWithLifecycle()
     val selectedTerm by viewModel.selectedTerm.collectAsStateWithLifecycle()
 
-    LaunchedEffect(selectedTerm) {
+    LaunchedEffect(selectedTerm, currentScreen) {
         if (selectedTerm == "SOMONNITO" && currentScreen == AppScreen.QUICK_EDIT) {
-            currentScreen = AppScreen.TABULATION
+            navigateTo(AppScreen.TABULATION)
         }
     }
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
@@ -176,7 +188,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                             label = { Text("Quick Mark Entry") },
                             selected = currentScreen == AppScreen.QUICK_EDIT,
                             onClick = {
-                                currentScreen = AppScreen.QUICK_EDIT
+                                navigateTo(AppScreen.QUICK_EDIT)
                                 scope.launch { drawerState.close() }
                             },
                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -188,7 +200,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Students Roster") },
                         selected = currentScreen == AppScreen.STUDENTS,
                         onClick = {
-                            currentScreen = AppScreen.STUDENTS
+                            navigateTo(AppScreen.STUDENTS)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -199,7 +211,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Subjects & Curriculum") },
                         selected = currentScreen == AppScreen.SUBJECTS,
                         onClick = {
-                            currentScreen = AppScreen.SUBJECTS
+                            navigateTo(AppScreen.SUBJECTS)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -221,7 +233,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Dashboard & Analytics") },
                         selected = currentScreen == AppScreen.DASHBOARD,
                         onClick = {
-                            currentScreen = AppScreen.DASHBOARD
+                            navigateTo(AppScreen.DASHBOARD)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -232,7 +244,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Tabulation Sheet") },
                         selected = currentScreen == AppScreen.TABULATION,
                         onClick = {
-                            currentScreen = AppScreen.TABULATION
+                            navigateTo(AppScreen.TABULATION)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -243,7 +255,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Individual Marksheet") },
                         selected = currentScreen == AppScreen.MARKSHEET,
                         onClick = {
-                            currentScreen = AppScreen.MARKSHEET
+                            navigateTo(AppScreen.MARKSHEET)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -254,7 +266,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Merit Ranking List") },
                         selected = currentScreen == AppScreen.MERIT_LIST,
                         onClick = {
-                            currentScreen = AppScreen.MERIT_LIST
+                            navigateTo(AppScreen.MERIT_LIST)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -276,7 +288,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Academic Year ($selectedYear)") },
                         selected = currentScreen == AppScreen.YEAR_PICKER,
                         onClick = {
-                            currentScreen = AppScreen.YEAR_PICKER
+                            navigateTo(AppScreen.YEAR_PICKER)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -287,7 +299,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Academic Term ($termDisplay)") },
                         selected = currentScreen == AppScreen.TERM_PICKER,
                         onClick = {
-                            currentScreen = AppScreen.TERM_PICKER
+                            navigateTo(AppScreen.TERM_PICKER)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -309,7 +321,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
                         label = { Text("Settings & Setup") },
                         selected = currentScreen == AppScreen.SETTINGS,
                         onClick = {
-                            currentScreen = AppScreen.SETTINGS
+                            navigateTo(AppScreen.SETTINGS)
                             scope.launch { drawerState.close() }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -360,7 +372,7 @@ fun MainScreen(viewModel: TeacherViewModel) {
 
                         // Quick Term Selector Chip
                         AssistChip(
-                            onClick = { currentScreen = AppScreen.TERM_PICKER },
+                            onClick = { navigateTo(AppScreen.TERM_PICKER) },
                             label = { Text(termDisplay, fontSize = 11.sp) },
                             modifier = Modifier.padding(end = 8.dp)
                         )
@@ -375,13 +387,13 @@ fun MainScreen(viewModel: TeacherViewModel) {
                     NavigationBar(containerColor = animatedSurfaceVariant) {
                         NavigationBarItem(
                             selected = currentScreen == AppScreen.TABULATION,
-                            onClick = { currentScreen = AppScreen.TABULATION },
+                            onClick = { navigateTo(AppScreen.TABULATION) },
                             icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Tabulation") },
                             label = { Text("Tabulation") }
                         )
                         NavigationBarItem(
                             selected = currentScreen == AppScreen.MARKSHEET,
-                            onClick = { currentScreen = AppScreen.MARKSHEET },
+                            onClick = { navigateTo(AppScreen.MARKSHEET) },
                             icon = { Icon(Icons.Default.Person, contentDescription = "Marksheet") },
                             label = { Text("Marksheet") }
                         )
@@ -393,37 +405,43 @@ fun MainScreen(viewModel: TeacherViewModel) {
                 when (currentScreen) {
                     AppScreen.DASHBOARD -> DashboardScreen(
                         viewModel = viewModel,
-                        onNavigateToMeritList = { currentScreen = AppScreen.MERIT_LIST }
+                        onNavigateToMeritList = { navigateTo(AppScreen.MERIT_LIST) }
                     )
                     AppScreen.QUICK_EDIT -> QuickEditScreen(viewModel = viewModel)
                     AppScreen.STUDENTS -> StudentsScreen(viewModel = viewModel)
                     AppScreen.SUBJECTS -> SubjectsScreen(viewModel = viewModel)
-                    AppScreen.TABULATION -> TabulationScreen(viewModel = viewModel)
+                    AppScreen.TABULATION -> TabulationScreen(
+                        viewModel = viewModel,
+                        onNavigateToMarksheet = { rollNumber -> 
+                            viewModel.onMarksheetSearchChanged(rollNumber.toString())
+                            navigateTo(AppScreen.MARKSHEET) 
+                        }
+                    )
                     AppScreen.MARKSHEET -> MarksheetScreen(viewModel = viewModel)
                     AppScreen.MERIT_LIST -> MeritListScreen(
                         viewModel = viewModel,
-                        onBack = { currentScreen = AppScreen.DASHBOARD }
+                        onBack = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) }
                     )
                     AppScreen.YEAR_PICKER -> YearPickerScreen(
                         onYearSelected = { year ->
                             viewModel.selectYear(year.toString())
-                            currentScreen = AppScreen.TABULATION
+                            if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
                         }
                     )
                     AppScreen.TERM_PICKER -> TermPickerScreen(
                         selectedYear = selectedYear.toIntOrNull() ?: 2026,
                         onTermSelected = { term ->
                             viewModel.selectTerm(term)
-                            currentScreen = AppScreen.TABULATION
+                            if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
                         },
                         onBack = { 
-                            currentScreen = AppScreen.TABULATION
+                            if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
                         }
                     )
                     AppScreen.SETTINGS -> SettingsScreen(
                         viewModel = viewModel,
-                        onNavigateToYearPicker = { currentScreen = AppScreen.YEAR_PICKER },
-                        onNavigateToTermPicker = { currentScreen = AppScreen.TERM_PICKER }
+                        onNavigateToYearPicker = { navigateTo(AppScreen.YEAR_PICKER) },
+                        onNavigateToTermPicker = { navigateTo(AppScreen.TERM_PICKER) }
                     )
                 }
             }

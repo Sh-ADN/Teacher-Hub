@@ -39,6 +39,7 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
     val context = LocalContext.current
     var showAddDialog by remember { mutableStateOf(false) }
     var editingStudent by remember { mutableStateOf<StudentEntity?>(null) }
+    var studentToDelete by remember { mutableStateOf<StudentEntity?>(null) }
     
     val csvFileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
@@ -149,7 +150,7 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
                                     IconButton(onClick = { editingStudent = student }) {
                                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                                     }
-                                    IconButton(onClick = { viewModel.deleteStudent(student) }) {
+                                    IconButton(onClick = { studentToDelete = student }) {
                                         Icon(Icons.Default.Delete, contentDescription = "Delete")
                                     }
                                 }
@@ -213,6 +214,30 @@ fun StudentsScreen(viewModel: TeacherViewModel) {
                     showAddDialog = false
                     editingStudent = null
                 }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    studentToDelete?.let { st ->
+        AlertDialog(
+            onDismissRequest = { studentToDelete = null },
+            title = { Text("Delete Student?") },
+            text = { Text("Are you sure you want to delete ${st.name}? This will also delete all marks associated with this student for the current academic year. This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteStudent(st)
+                        studentToDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { studentToDelete = null }) {
                     Text("Cancel")
                 }
             }
