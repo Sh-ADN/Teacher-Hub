@@ -80,15 +80,20 @@ fun QuickEditScreen(viewModel: TeacherViewModel) {
                     @Suppress("DEPRECATION")
                     MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
                 }
-                val results = ScannerUtil.scanMarksheet(bitmap, geminiApiKey)
+                val result = ScannerUtil.scanMarksheet(bitmap, geminiApiKey)
                 isScanning = false
-                if (results == null) {
-                    Toast.makeText(context, "Failed to scan. Please try again.", Toast.LENGTH_LONG).show()
-                } else if (results.isEmpty()) {
-                    Toast.makeText(context, "No marks found, or API Key is missing in Settings.", Toast.LENGTH_LONG).show()
-                } else {
-                    scanResults = results
-                }
+                result.fold(
+                    onSuccess = { results ->
+                        if (results.isEmpty()) {
+                            Toast.makeText(context, "No marks found in the image.", Toast.LENGTH_LONG).show()
+                        } else {
+                            scanResults = results
+                        }
+                    },
+                    onFailure = { error ->
+                        Toast.makeText(context, "Scan failed: ${error.message}", Toast.LENGTH_LONG).show()
+                    }
+                )
             }
         }
     }

@@ -39,10 +39,10 @@ object ScannerUtil {
         return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
     }
 
-    suspend fun scanMarksheet(bitmap: Bitmap, apiKey: String): List<ScanResultItem>? = withContext(Dispatchers.IO) {
+    suspend fun scanMarksheet(bitmap: Bitmap, apiKey: String): Result<List<ScanResultItem>> = withContext(Dispatchers.IO) {
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
             Log.e("ScannerUtil", "API Key is missing!")
-            return@withContext emptyList()
+            return@withContext Result.failure(Exception("API Key is missing"))
         }
 
         val prompt = """
@@ -77,15 +77,12 @@ object ScannerUtil {
                     Part(text = prompt),
                     Part(inlineData = InlineData(mimeType = "image/jpeg", data = bitmap.toBase64()))
                 )
-            )),
-            generationConfig = GenerationConfig(
-                responseMimeType = "application/json"
-            )
+            ))
         )
 
         try {
             val response = RetrofitClient.service.generateContent(apiKey, request)
-            val text = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: return@withContext null
+            val text = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: return@withContext Result.failure(Exception("Empty API Response"))
             Log.d("ScannerUtil", "Raw API Response: ${text}")
             
             val cleanedText = text.replace("```json", "").replace("```", "").trim()
@@ -93,10 +90,10 @@ object ScannerUtil {
             val moshi = Moshi.Builder().build()
             val adapter = moshi.adapter(ScanResponse::class.java)
             val scanResponse = adapter.fromJson(cleanedText)
-            scanResponse?.results
+            Result.success(scanResponse?.results ?: emptyList())
         } catch (e: Exception) {
             Log.e("ScannerUtil", "Error scanning marksheet: ${e.message}", e)
-            null
+            Result.failure(e)
         }
     }
 }
